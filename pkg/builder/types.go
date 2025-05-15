@@ -43,10 +43,10 @@ type BuilderComponentArgs struct {
 // BuilderEnv contains all environment variables required by the builder service.
 type BuilderEnv struct {
 	AuthTokenRefreshInterval pulumi.StringInput `pulumi:"authTokenRefreshInterval"`
-	AWSAccountId             pulumi.StringInput `pulumi:"awsAccountId"`
-	AWSAccessKeyId           pulumi.StringInput `pulumi:"awsAccessKeyId"`
-	AWSRegion                pulumi.StringInput `pulumi:"awsRegion"`
-	AWSSecretAccessKey       pulumi.StringInput `pulumi:"awsSecretAccessKey"`
+	AwsAccountId             pulumi.StringInput `pulumi:"awsAccountId"`
+	AwsAccessKeyId           pulumi.StringInput `pulumi:"awsAccessKeyId"`
+	AwsRegion                pulumi.StringInput `pulumi:"awsRegion"`
+	AwsSecretAccessKey       pulumi.StringInput `pulumi:"awsSecretAccessKey"`
 	BlockConfirmationBuffer  pulumi.StringInput `pulumi:"blockConfirmationBuffer"`
 	BlockQueryCutoff         pulumi.StringInput `pulumi:"blockQueryCutoff"`
 	BlockQueryStart          pulumi.StringInput `pulumi:"blockQueryStart"`

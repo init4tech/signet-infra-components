@@ -9,8 +9,9 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-// createKMSPolicy creates a KMS policy for the builder service.
-func createKMSPolicy(key pulumi.StringInput) pulumi.StringOutput {
+// CreateKMSPolicy creates a KMS policy for the builder service.
+// Exported for testing.
+func CreateKMSPolicy(key pulumi.StringInput) pulumi.StringOutput {
 	return pulumi.Sprintf(`{
 		"Version": "2012-10-17",
 		"Statement": [
@@ -26,9 +27,15 @@ func createKMSPolicy(key pulumi.StringInput) pulumi.StringOutput {
 	}`, key)
 }
 
-// createEnvVars creates environment variables by automatically mapping
+// createKMSPolicy is the internal version kept for backward compatibility
+func createKMSPolicy(key pulumi.StringInput) pulumi.StringOutput {
+	return CreateKMSPolicy(key)
+}
+
+// CreateEnvVars creates environment variables by automatically mapping
 // struct field names to environment variable names.
-func createEnvVars(env BuilderEnv) corev1.EnvVarArray {
+// Exported for testing.
+func CreateEnvVars(env BuilderEnv) corev1.EnvVarArray {
 	result := corev1.EnvVarArray{}
 
 	// Special case for BuilderPort as it needs string conversion
@@ -38,7 +45,7 @@ func createEnvVars(env BuilderEnv) corev1.EnvVarArray {
 	})
 
 	// Process all string inputs from the struct's tags
-	envVarMap := getEnvironmentVarsFromStruct(env)
+	envVarMap := GetEnvironmentVarsFromStruct(env)
 	for name, value := range envVarMap {
 		if name != "BUILDER_PORT" { // Skip the one we already handled
 			result = append(result, &corev1.EnvVarArgs{
@@ -51,8 +58,14 @@ func createEnvVars(env BuilderEnv) corev1.EnvVarArray {
 	return result
 }
 
-// getEnvironmentVarsFromStruct uses reflection to extract environment variables from struct tags
-func getEnvironmentVarsFromStruct(env BuilderEnv) map[string]pulumi.Input {
+// createEnvVars is kept for backward compatibility
+func createEnvVars(env BuilderEnv) corev1.EnvVarArray {
+	return CreateEnvVars(env)
+}
+
+// GetEnvironmentVarsFromStruct uses reflection to extract environment variables from struct tags
+// Exported for testing.
+func GetEnvironmentVarsFromStruct(env BuilderEnv) map[string]pulumi.Input {
 	result := make(map[string]pulumi.Input)
 
 	t := reflect.TypeOf(env)
@@ -70,7 +83,7 @@ func getEnvironmentVarsFromStruct(env BuilderEnv) map[string]pulumi.Input {
 		}
 
 		// Convert camelCase to SNAKE_CASE for env var name
-		envName := camelToSnake(field.Name)
+		envName := CamelToSnake(field.Name)
 
 		// Add to map
 		result[envName] = fieldValue.(pulumi.Input)
@@ -79,12 +92,26 @@ func getEnvironmentVarsFromStruct(env BuilderEnv) map[string]pulumi.Input {
 	return result
 }
 
-// camelToSnake converts a camelCase string to SNAKE_CASE
-func camelToSnake(s string) string {
+// getEnvironmentVarsFromStruct is kept for backward compatibility
+func getEnvironmentVarsFromStruct(env BuilderEnv) map[string]pulumi.Input {
+	return GetEnvironmentVarsFromStruct(env)
+}
+
+// CamelToSnake converts a camelCase string to SNAKE_CASE
+// Exported for testing purposes
+func CamelToSnake(s string) string {
 	var result strings.Builder
+
+	// Handle consecutive uppercase characters (acronyms)
 	for i, r := range s {
 		if unicode.IsUpper(r) {
-			if i > 0 {
+			// Add underscore if not the first character and either:
+			// 1. Previous character is lowercase, or
+			// 2. Not the last character and next character is lowercase (end of acronym)
+			needsUnderscore := i > 0 && (unicode.IsLower(rune(s[i-1])) ||
+				(i < len(s)-1 && unicode.IsLower(rune(s[i+1])) && i > 1 && unicode.IsUpper(rune(s[i-1]))))
+
+			if needsUnderscore {
 				result.WriteRune('_')
 			}
 			result.WriteRune(unicode.ToUpper(r))
