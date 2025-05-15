@@ -28,9 +28,9 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	}
 
 	// Create service account
-	sa, err := corev1.NewServiceAccount(ctx, "builder-sa", &corev1.ServiceAccountArgs{
+	sa, err := corev1.NewServiceAccount(ctx, fmt.Sprintf("%s-sa", args.Name), &corev1.ServiceAccountArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String("builder-sa"),
+			Name:      pulumi.String(fmt.Sprintf("%s-sa", args.Name)),
 			Namespace: pulumi.String(args.Namespace),
 		},
 	}, pulumi.Parent(component))
@@ -67,11 +67,11 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 		return nil, fmt.Errorf("failed to marshal assume role policy: %w", err)
 	}
 
-	role, err := iam.NewRole(ctx, "builder-role", &iam.RoleArgs{
+	role, err := iam.NewRole(ctx, fmt.Sprintf("%s-role", args.Name), &iam.RoleArgs{
 		AssumeRolePolicy: pulumi.String(assumeRolePolicyJSON),
-		Description:      pulumi.String("Role for builder pod to assume"),
+		Description:      pulumi.String(fmt.Sprintf("Role for %s pod to assume", args.Name)),
 		Tags: pulumi.StringMap{
-			"Name": pulumi.String("builder-role"),
+			"Name": pulumi.String(fmt.Sprintf("%s-role", args.Name)),
 		},
 	}, pulumi.Parent(component))
 	if err != nil {
@@ -82,7 +82,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	// Create KMS policy
 	policyJSON := createKMSPolicy(args.BuilderEnv.BuilderKey)
 
-	policy, err := iam.NewPolicy(ctx, "quinceyAppPolicy", &iam.PolicyArgs{
+	policy, err := iam.NewPolicy(ctx, fmt.Sprintf("%s-policy", args.Name), &iam.PolicyArgs{
 		Policy: policyJSON,
 	}, pulumi.Parent(component))
 	if err != nil {
@@ -91,7 +91,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	component.IAMPolicy = policy
 
 	// Attach policy to role
-	_, err = iam.NewRolePolicyAttachment(ctx, "builder-role-policy-attachment", &iam.RolePolicyAttachmentArgs{
+	_, err = iam.NewRolePolicyAttachment(ctx, fmt.Sprintf("%s-role-policy-attachment", args.Name), &iam.RolePolicyAttachmentArgs{
 		Role:      role.Name,
 		PolicyArn: policy.Arn,
 	}, pulumi.Parent(component))
@@ -100,9 +100,9 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	}
 
 	// Create deployment
-	deployment, err := appsv1.NewDeployment(ctx, "builder-deployment", &appsv1.DeploymentArgs{
+	deployment, err := appsv1.NewDeployment(ctx, fmt.Sprintf("%s-deployment", args.Name), &appsv1.DeploymentArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String("builder-deployment"),
+			Name:      pulumi.String(fmt.Sprintf("%s-deployment", args.Name)),
 			Namespace: pulumi.String(args.Namespace),
 		},
 		Spec: &appsv1.DeploymentSpecArgs{
@@ -115,10 +115,10 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 					Labels: args.AppLabels.Labels,
 				},
 				Spec: &corev1.PodSpecArgs{
-					ServiceAccountName: pulumi.String("builder-sa"),
+					ServiceAccountName: pulumi.String(fmt.Sprintf("%s-sa", args.Name)),
 					Containers: corev1.ContainerArray{
 						&corev1.ContainerArgs{
-							Name:  pulumi.String("builder"),
+							Name:  pulumi.String(args.Name),
 							Image: pulumi.String(args.Image),
 							Env:   createEnvVars(args.BuilderEnv),
 							Ports: corev1.ContainerPortArray{
@@ -169,9 +169,9 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	component.Deployment = deployment
 
 	// Create service
-	service, err := corev1.NewService(ctx, "builder-service", &corev1.ServiceArgs{
+	service, err := corev1.NewService(ctx, fmt.Sprintf("%s-service", args.Name), &corev1.ServiceArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String("builder-service"),
+			Name:      pulumi.String(fmt.Sprintf("%s-service", args.Name)),
 			Namespace: pulumi.String(args.Namespace),
 			Annotations: pulumi.StringMap{
 				"prometheus.io/scrape": pulumi.String("true"),
@@ -201,11 +201,11 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	component.Service = service
 
 	// Create pod monitor
-	_, err = crd.NewCustomResource(ctx, "builder-svcmon", &crd.CustomResourceArgs{
+	_, err = crd.NewCustomResource(ctx, fmt.Sprintf("%s-svcmon", args.Name), &crd.CustomResourceArgs{
 		ApiVersion: pulumi.String("monitoring.coreos.com/v1"),
 		Kind:       pulumi.String("PodMonitor"),
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String("builder-pod-monitor"),
+			Name:      pulumi.String(fmt.Sprintf("%s-pod-monitor", args.Name)),
 			Namespace: pulumi.String(args.Namespace),
 		},
 		OtherFields: map[string]interface{}{

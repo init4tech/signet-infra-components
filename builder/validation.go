@@ -86,9 +86,6 @@ func (env *BuilderEnv) Validate() error {
 	if env.TxPoolUrl == nil {
 		return fmt.Errorf("tx pool URL is required")
 	}
-	if env.ZenithAddress == nil {
-		return fmt.Errorf("zenith address is required")
-	}
 
 	return nil
 }
