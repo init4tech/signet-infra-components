@@ -80,7 +80,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	component.IAMRole = role
 
 	// Create KMS policy
-	policyJSON := createKMSPolicy(args.BuilderEnv.BuilderKey)
+	policyJSON := CreateKMSPolicy(args.BuilderEnv.BuilderKey)
 
 	policy, err := iam.NewPolicy(ctx, fmt.Sprintf("%s-policy", args.Name), &iam.PolicyArgs{
 		Policy: policyJSON,

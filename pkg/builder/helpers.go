@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"encoding/json"
 	"reflect"
 	"strings"
 	"unicode"
@@ -12,24 +13,28 @@ import (
 // CreateKMSPolicy creates a KMS policy for the builder service.
 // Exported for testing.
 func CreateKMSPolicy(key pulumi.StringInput) pulumi.StringOutput {
-	return pulumi.Sprintf(`{
-		"Version": "2012-10-17",
-		"Statement": [
+	policy := KMSPolicy{
+		Version: "2012-10-17",
+		Statement: []KMSStatement{
 			{
-				"Effect": "Allow",
-				"Action": [
+				Effect: "Allow",
+				Action: []string{
 					"kms:Sign",
-					"kms:GetPublicKey"
-				],
-				"Resource": %s
-			}
-		]
-	}`, key)
-}
+					"kms:GetPublicKey",
+				},
+				Resource: key,
+			},
+		},
+	}
 
-// createKMSPolicy is the internal version kept for backward compatibility
-func createKMSPolicy(key pulumi.StringInput) pulumi.StringOutput {
-	return CreateKMSPolicy(key)
+	// Convert to JSON string output
+	return pulumi.All(key).ApplyT(func(_ []interface{}) (string, error) {
+		jsonBytes, err := json.Marshal(policy)
+		if err != nil {
+			return "", err
+		}
+		return string(jsonBytes), nil
+	}).(pulumi.StringOutput)
 }
 
 // CreateEnvVars creates environment variables by automatically mapping
