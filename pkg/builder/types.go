@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"github.com/init4tech/signet-infra-components/pkg/utils"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
 	corev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -29,6 +30,7 @@ type BuilderComponent struct {
 	ServiceAccount       *corev1.ServiceAccount
 	IAMRole              *iam.Role
 	IAMPolicy            *iam.Policy
+	ConfigMap            *corev1.ConfigMap
 }
 
 // BuilderComponentArgs contains the configuration for deploying a builder service.
@@ -52,7 +54,7 @@ type BuilderEnv struct {
 	BlockQueryStart          pulumi.StringInput `pulumi:"blockQueryStart"`
 	BuilderHelperAddress     pulumi.StringInput `pulumi:"builderHelperAddress"`
 	BuilderKey               pulumi.StringInput `pulumi:"builderKey"`
-	BuilderPort              pulumi.IntInput    `pulumi:"builderPort"`
+	BuilderPort              pulumi.StringInput `pulumi:"builderPort"`
 	BuilderRewardsAddress    pulumi.StringInput `pulumi:"builderRewardsAddress"`
 	ChainOffset              pulumi.StringInput `pulumi:"chainOffset"`
 	ConcurrentLimit          pulumi.StringInput `pulumi:"concurrentLimit"`
@@ -78,6 +80,13 @@ type BuilderEnv struct {
 	TxPoolCacheDuration      pulumi.StringInput `pulumi:"txPoolCacheDuration"`
 	TxPoolUrl                pulumi.StringInput `pulumi:"txPoolUrl"`
 	ZenithAddress            pulumi.StringInput `pulumi:"zenithAddress"`
+}
+
+// GetEnvMap implements the utils.EnvProvider interface
+// It creates a map of environment variables from the BuilderEnv struct
+func (e BuilderEnv) GetEnvMap() pulumi.StringMap {
+	// All fields are now StringInput, so we can use the standard reflection method
+	return utils.CreateEnvMap(e)
 }
 
 type IAMStatement struct {
