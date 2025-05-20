@@ -26,59 +26,39 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 
 	storageSize := pulumi.String("150Gi")
 
-	_, err = corev1.NewPersistentVolumeClaim(ctx, "signet-node-db-data", &corev1.PersistentVolumeClaimArgs{
-		Metadata: &metav1.ObjectMetaArgs{
-			Name: pulumi.String("signet-node-data"),
-			Labels: pulumi.StringMap{
-				"app.kubernetes.io/name":    pulumi.String("signet-node-data"),
-				"app.kubernetes.io/part-of": pulumi.String("signet-node-data"),
-			},
-			Namespace: args.Namespace,
-		},
-		Spec: &corev1.PersistentVolumeClaimSpecArgs{
-			AccessModes: pulumi.StringArray{pulumi.String("ReadWriteOnce")},
-			Resources: &corev1.VolumeResourceRequirementsArgs{
-				Requests: pulumi.StringMap{
-					"storage": storageSize,
-				},
-			},
-			StorageClassName: pulumi.String("aws-gp3"),
-		},
-	}, pulumi.Parent(component))
+	_, err = CreatePersistentVolumeClaim(
+		ctx,
+		"signet-node-data",
+		args.Namespace,
+		storageSize,
+		"aws-gp3",
+		component,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create signet node db data pvc: %w", err)
 	}
 
-	_, err = corev1.NewPersistentVolumeClaim(ctx, "rollup-data", &corev1.PersistentVolumeClaimArgs{
-		Metadata: &metav1.ObjectMetaArgs{
-			Name: pulumi.String("rollup-data"),
-			Labels: pulumi.StringMap{
-				"app.kubernetes.io/name":    pulumi.String("rollup-data"),
-				"app.kubernetes.io/part-of": pulumi.String("rollup-data"),
-			},
-			Namespace: args.Namespace,
-		},
-		Spec: &corev1.PersistentVolumeClaimSpecArgs{
-			AccessModes: pulumi.StringArray{pulumi.String("ReadWriteOnce")},
-			Resources: &corev1.VolumeResourceRequirementsArgs{
-				Requests: pulumi.StringMap{
-					"storage": storageSize,
-				},
-			},
-			StorageClassName: pulumi.String("aws-gp3"),
-		},
-	}, pulumi.Parent(component))
+	_, err = CreatePersistentVolumeClaim(
+		ctx,
+		"rollup-data",
+		args.Namespace,
+		storageSize,
+		"aws-gp3",
+		component,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create rollup data pvc: %w", err)
 	}
 
-	secret, err := corev1.NewSecret(ctx, "execution-jwt", &corev1.SecretArgs{
+	secretName := "execution-jwt"
+	secret, err := corev1.NewSecret(ctx, secretName, &corev1.SecretArgs{
 		StringData: pulumi.StringMap{
 			"jwt.hex": args.ExecutionJwt,
 		},
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String("execution-jwt"),
+			Name:      pulumi.String(secretName),
 			Namespace: args.Namespace,
+			Labels:    utils.CreateResourceLabels(args.Name, secretName, args.Name, nil),
 		},
 	})
 	if err != nil {
@@ -86,14 +66,12 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	}
 
 	// Create ConfigMap for execution environment variables
+	executionConfigMapName := "exex-configmap"
 	executionConfigMap, err := utils.CreateConfigMap(
 		ctx,
-		"exex-configmap",
+		executionConfigMapName,
 		args.Namespace,
-		pulumi.StringMap{
-			"app.kubernetes.io/name":    pulumi.String("exex-configmap"),
-			"app.kubernetes.io/part-of": pulumi.String("exex-configmap"),
-		},
+		utils.CreateResourceLabels(args.Name, executionConfigMapName, args.Name, nil),
 		args.Env,
 	)
 	if err != nil {
@@ -102,10 +80,10 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	component.SignetNodeConfigMap = executionConfigMap
 
 	// SERVICE
-
 	executionClientName := "signet-node"
+	executionClientServiceName := fmt.Sprintf("%s-service", executionClientName)
 
-	hostExecutionClientService, err := corev1.NewService(ctx, fmt.Sprintf("%s-service", executionClientName), &corev1.ServiceArgs{
+	hostExecutionClientService, err := corev1.NewService(ctx, executionClientServiceName, &corev1.ServiceArgs{
 		Spec: &corev1.ServiceSpecArgs{
 			Selector: pulumi.StringMap{"app": pulumi.String("signet-node-execution-set")},
 			Type:     pulumi.String("ClusterIP"),
@@ -145,12 +123,9 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 			},
 		},
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.Sprintf("%s-service", executionClientName),
+			Name:      pulumi.String(executionClientServiceName),
 			Namespace: args.Namespace,
-			Labels: pulumi.StringMap{
-				"app.kubernetes.io/name":    pulumi.Sprintf("%s-service", executionClientName),
-				"app.kubernetes.io/part-of": pulumi.Sprintf("%s", executionClientName),
-			},
+			Labels:    utils.CreateResourceLabels(args.Name, executionClientServiceName, args.Name, nil),
 		},
 	}, pulumi.Parent(component))
 	if err != nil {
@@ -160,40 +135,36 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	executionServiceIpString := hostExecutionClientService.Spec.ClusterIP().Elem()
 
 	// STATEFUL SET
-
 	hostStatefulSetName := "signet-node-execution-set"
+	hostStatefulSetResourceName := fmt.Sprintf("%s-set", hostStatefulSetName)
+
+	// Create pod labels with app label for stateful set
+	executionPodLabels := utils.CreateResourceLabels(args.Name, hostStatefulSetName, args.Name, nil)
+	executionPodLabels["app"] = pulumi.String(hostStatefulSetName)
 
 	// Define the StatefulSet for the 'reth' container with a configmap volume and a data persistent volume
-	_, err = appsv1.NewStatefulSet(ctx, fmt.Sprintf("%s-set", hostStatefulSetName), &appsv1.StatefulSetArgs{
+	_, err = appsv1.NewStatefulSet(ctx, hostStatefulSetResourceName, &appsv1.StatefulSetArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name: pulumi.Sprintf("%s", hostStatefulSetName),
-			Labels: pulumi.StringMap{
-				"app":                       pulumi.Sprintf("%s-set", hostStatefulSetName),
-				"app.kubernetes.io/name":    pulumi.Sprintf("%s-set", hostStatefulSetName),
-				"app.kubernetes.io/part-of": pulumi.Sprintf("%s", hostStatefulSetName),
-			},
+			Name:      pulumi.String(hostStatefulSetName),
+			Labels:    utils.CreateResourceLabels(args.Name, hostStatefulSetResourceName, args.Name, nil),
 			Namespace: args.Namespace,
 		},
 		Spec: &appsv1.StatefulSetSpecArgs{
 			Replicas: pulumi.Int(1),
 			Selector: &metav1.LabelSelectorArgs{
 				MatchLabels: pulumi.StringMap{
-					"app": pulumi.Sprintf("%s", hostStatefulSetName),
+					"app": pulumi.String(hostStatefulSetName),
 				},
 			},
 			Template: &corev1.PodTemplateSpecArgs{
 				Metadata: &metav1.ObjectMetaArgs{
-					Labels: pulumi.StringMap{
-						"app":                       pulumi.Sprintf("%s", hostStatefulSetName),
-						"app.kubernetes.io/name":    pulumi.Sprintf("%s", hostStatefulSetName),
-						"app.kubernetes.io/part-of": pulumi.Sprintf("%s", hostStatefulSetName),
-					},
+					Labels:    executionPodLabels,
 					Namespace: args.Namespace,
 				},
 				Spec: &corev1.PodSpecArgs{
 					Containers: corev1.ContainerArray{
 						corev1.ContainerArgs{
-							Name:            pulumi.Sprintf("%s", hostStatefulSetName),
+							Name:            pulumi.String(hostStatefulSetName),
 							Image:           args.ExecutionClientImage,
 							ImagePullPolicy: pulumi.String("Always"),
 							Command: pulumi.StringArray{
@@ -274,16 +245,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 									MountPath: pulumi.String("/etc/reth/execution-jwt"),
 								},
 							},
-							Resources: &corev1.ResourceRequirementsArgs{
-								Limits: pulumi.StringMap{
-									"cpu":    pulumi.String("2"),
-									"memory": pulumi.String("16Gi"),
-								},
-								Requests: pulumi.StringMap{
-									"cpu":    pulumi.String("2"),
-									"memory": pulumi.String("4Gi"),
-								},
-							},
+							Resources: NewResourceRequirements("2", "16Gi", "2", "4Gi"),
 						},
 					},
 					Volumes: corev1.VolumeArray{
@@ -317,25 +279,14 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	// LIGHTHOUSE
 	consensusClientName := "lighthouse"
 
-	_, err = corev1.NewPersistentVolumeClaim(ctx, fmt.Sprintf("%s-data", "real-lighthouse-db"), &corev1.PersistentVolumeClaimArgs{
-		Metadata: &metav1.ObjectMetaArgs{
-			Name: pulumi.String("real-lighthouse-data"),
-			Labels: pulumi.StringMap{
-				"app.kubernetes.io/name":    pulumi.String("real-lighthouse-data"),
-				"app.kubernetes.io/part-of": pulumi.Sprintf("%s", "real-lighthouse-db"),
-			},
-			Namespace: args.Namespace,
-		},
-		Spec: &corev1.PersistentVolumeClaimSpecArgs{
-			AccessModes: pulumi.StringArray{pulumi.String("ReadWriteOnce")},
-			Resources: &corev1.VolumeResourceRequirementsArgs{
-				Requests: pulumi.StringMap{
-					"storage": storageSize,
-				},
-			},
-			StorageClassName: pulumi.String("aws-gp3"),
-		},
-	}, pulumi.Parent(component))
+	_, err = CreatePersistentVolumeClaim(
+		ctx,
+		"real-lighthouse-data",
+		args.Namespace,
+		storageSize,
+		"aws-gp3",
+		component,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create lighthouse data pvc: %w", err)
 	}
@@ -345,14 +296,12 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		"EXAMPLE": pulumi.String("example"),
 	}
 
+	consensusConfigMapName := "consensus-configmap-env-config"
 	consensusConfigMap, err := utils.CreateConfigMap(
 		ctx,
-		"consensus-configmap-env-config",
+		consensusConfigMapName,
 		args.Namespace,
-		pulumi.StringMap{
-			"app.kubernetes.io/name":    pulumi.String("consensus-configmap-env-config"),
-			"app.kubernetes.io/part-of": pulumi.String("consensus-configmap"),
-		},
+		utils.CreateResourceLabels(args.Name, consensusConfigMapName, args.Name, nil),
 		consensusEnv,
 	)
 	if err != nil {
@@ -360,9 +309,10 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	}
 	component.LighthouseConfigMap = consensusConfigMap
 
-	lighthouseInternalService, err := corev1.NewService(ctx, fmt.Sprintf("%s-service", consensusClientName), &corev1.ServiceArgs{
+	lighthouseServiceName := fmt.Sprintf("%s-service", consensusClientName)
+	lighthouseInternalService, err := corev1.NewService(ctx, lighthouseServiceName, &corev1.ServiceArgs{
 		Spec: &corev1.ServiceSpecArgs{
-			Selector: pulumi.StringMap{"app": pulumi.Sprintf("%s", consensusClientName)},
+			Selector: pulumi.StringMap{"app": pulumi.String(consensusClientName)},
 			Type:     pulumi.String("ClusterIP"),
 			Ports: corev1.ServicePortArray{
 				corev1.ServicePortArgs{
@@ -399,12 +349,9 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 			},
 		},
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.Sprintf("%s-service", consensusClientName),
+			Name:      pulumi.String(lighthouseServiceName),
 			Namespace: args.Namespace,
-			Labels: pulumi.StringMap{
-				"app.kubernetes.io/name":    pulumi.Sprintf("%s-service", consensusClientName),
-				"app.kubernetes.io/part-of": pulumi.Sprintf("%s", consensusClientName),
-			},
+			Labels:    utils.CreateResourceLabels(args.Name, lighthouseServiceName, args.Name, nil),
 		},
 	}, pulumi.Parent(component))
 	if err != nil {
@@ -414,36 +361,34 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	lighthouseServiceIpString := lighthouseInternalService.Spec.ClusterIP().Elem()
 
 	lighthouseStatefulSet := "lighthouse"
+	lighthouseStatefulSetResourceName := fmt.Sprintf("%s-set", lighthouseStatefulSet)
 
-	_, err = appsv1.NewStatefulSet(ctx, fmt.Sprintf("%s-set", lighthouseStatefulSet), &appsv1.StatefulSetArgs{
+	// Create pod labels with app label for stateful set
+	lighthousePodLabels := utils.CreateResourceLabels(args.Name, lighthouseStatefulSet, args.Name, nil)
+	lighthousePodLabels["app"] = pulumi.String(lighthouseStatefulSet)
+
+	_, err = appsv1.NewStatefulSet(ctx, lighthouseStatefulSetResourceName, &appsv1.StatefulSetArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name: pulumi.Sprintf("%s", lighthouseStatefulSet),
-			Labels: pulumi.StringMap{
-				"app.kubernetes.io/name":    pulumi.Sprintf("%s-set", lighthouseStatefulSet),
-				"app.kubernetes.io/part-of": pulumi.String("lighthouse"),
-			},
+			Name:      pulumi.String(lighthouseStatefulSet),
+			Labels:    utils.CreateResourceLabels(args.Name, lighthouseStatefulSetResourceName, args.Name, nil),
 			Namespace: args.Namespace,
 		},
 		Spec: &appsv1.StatefulSetSpecArgs{
 			Replicas: pulumi.Int(1),
 			Selector: &metav1.LabelSelectorArgs{
 				MatchLabels: pulumi.StringMap{
-					"app": pulumi.Sprintf("%s", lighthouseStatefulSet),
+					"app": pulumi.String(lighthouseStatefulSet),
 				},
 			},
 			Template: &corev1.PodTemplateSpecArgs{
 				Metadata: &metav1.ObjectMetaArgs{
 					Namespace: args.Namespace,
-					Labels: pulumi.StringMap{
-						"app":                       pulumi.Sprintf("%s", lighthouseStatefulSet),
-						"app.kubernetes.io/name":    pulumi.Sprintf("%s", lighthouseStatefulSet),
-						"app.kubernetes.io/part-of": pulumi.String("lighthouse"),
-					},
+					Labels:    lighthousePodLabels,
 				},
 				Spec: &corev1.PodSpecArgs{
 					Containers: corev1.ContainerArray{
 						corev1.ContainerArgs{
-							Name:  pulumi.Sprintf("%s", lighthouseStatefulSet),
+							Name:  pulumi.String(lighthouseStatefulSet),
 							Image: args.ConsensusClientImage,
 							Command: pulumi.StringArray{
 								pulumi.String("lighthouse"),
@@ -512,16 +457,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 									MountPath: pulumi.String("/secrets"),
 								},
 							},
-							Resources: &corev1.ResourceRequirementsArgs{
-								Limits: pulumi.StringMap{
-									"cpu":    pulumi.String("2"),
-									"memory": pulumi.String("16Gi"),
-								},
-								Requests: pulumi.StringMap{
-									"cpu":    pulumi.String("2"),
-									"memory": pulumi.String("4Gi"),
-								},
-							},
+							Resources: NewResourceRequirements("2", "16Gi", "2", "4Gi"),
 						},
 					},
 					DnsPolicy: pulumi.String("ClusterFirst"),
@@ -557,12 +493,14 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	// This enables the service mesh to route traffic from rpc.havarti.signet.sh
 	// to the signet-rpc service in the cluster
 	// VirtualService spec definition: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+	virtualServiceName := "signet-rpc"
 	_, err = crd.NewCustomResource(ctx, "signet-rpc-vservice", &crd.CustomResourceArgs{
 		ApiVersion: pulumi.String("networking.istio.io/v1alpha3"),
 		Kind:       pulumi.String("VirtualService"),
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String("signet-rpc"),
+			Name:      pulumi.String(virtualServiceName),
 			Namespace: args.Namespace,
+			Labels:    utils.CreateResourceLabels(args.Name, virtualServiceName, args.Name, nil),
 		},
 		OtherFields: map[string]interface{}{
 			"spec": map[string]interface{}{

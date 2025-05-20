@@ -7,14 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateResourceLabels(t *testing.T) {
-	name := "test-resource"
-	labels := CreateResourceLabels(name)
-
-	assert.Equal(t, pulumi.String(name), labels["app"])
-	assert.Equal(t, pulumi.String(name), labels["app.kubernetes.io/name"])
-	assert.Equal(t, pulumi.String(name), labels["app.kubernetes.io/part-of"])
-}
+// TestCreateResourceLabels moved to pkg/utils/labels_test.go since the function was moved there
 
 func TestResourceRequirements(t *testing.T) {
 	// Test with default values
