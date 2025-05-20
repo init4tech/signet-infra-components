@@ -40,10 +40,12 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	}
 
 	// Create service account
-	sa, err := corev1.NewServiceAccount(ctx, fmt.Sprintf("%s-sa", args.Name), &corev1.ServiceAccountArgs{
+	serviceAccountName := fmt.Sprintf("%s-sa", args.Name)
+	sa, err := corev1.NewServiceAccount(ctx, serviceAccountName, &corev1.ServiceAccountArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(fmt.Sprintf("%s-sa", args.Name)),
+			Name:      pulumi.String(serviceAccountName),
 			Namespace: pulumi.String(args.Namespace),
+			Labels:    utils.CreateResourceLabels(args.Name, serviceAccountName, args.Name, nil),
 		},
 	}, pulumi.Parent(component))
 	if err != nil {
@@ -52,15 +54,12 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	component.ServiceAccount = sa
 
 	// Create ConfigMap for environment variables
+	configMapName := fmt.Sprintf("%s-env", args.Name)
 	configMap, err := utils.CreateConfigMap(
 		ctx,
-		fmt.Sprintf("%s-configmap", args.Name),
+		configMapName,
 		pulumi.String(args.Namespace),
-		pulumi.StringMap{
-			"app":                       pulumi.String(args.Name),
-			"app.kubernetes.io/name":    pulumi.String(args.Name),
-			"app.kubernetes.io/part-of": pulumi.String(args.Name),
-		},
+		utils.CreateResourceLabels(args.Name, configMapName, args.Name, nil),
 		args.BuilderEnv,
 	)
 	if err != nil {
@@ -68,23 +67,29 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	}
 	component.ConfigMap = configMap
 
+	// Create pod labels with app label for routing
+	podLabels := utils.CreateResourceLabels(args.Name, args.Name, args.Name, args.AppLabels.Labels)
+	podLabels["app"] = pulumi.String(args.Name)
+
 	// Create deployment
-	deployment, err := appsv1.NewDeployment(ctx, fmt.Sprintf("%s-deployment", args.Name), &appsv1.DeploymentArgs{
+	deploymentName := fmt.Sprintf("%s-deployment", args.Name)
+	deployment, err := appsv1.NewDeployment(ctx, deploymentName, &appsv1.DeploymentArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(fmt.Sprintf("%s-deployment", args.Name)),
+			Name:      pulumi.String(deploymentName),
 			Namespace: pulumi.String(args.Namespace),
+			Labels:    utils.CreateResourceLabels(args.Name, deploymentName, args.Name, nil),
 		},
 		Spec: &appsv1.DeploymentSpecArgs{
 			Replicas: pulumi.Int(DefaultReplicas),
 			Selector: &metav1.LabelSelectorArgs{
-				MatchLabels: args.AppLabels.Labels,
+				MatchLabels: podLabels,
 			},
 			Template: &corev1.PodTemplateSpecArgs{
 				Metadata: &metav1.ObjectMetaArgs{
-					Labels: args.AppLabels.Labels,
+					Labels: podLabels,
 				},
 				Spec: &corev1.PodSpecArgs{
-					ServiceAccountName: pulumi.String(fmt.Sprintf("%s-sa", args.Name)),
+					ServiceAccountName: pulumi.String(serviceAccountName),
 					Containers: corev1.ContainerArray{
 						&corev1.ContainerArgs{
 							Name:  pulumi.String(args.Name),
@@ -144,10 +149,12 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	component.Deployment = deployment
 
 	// Create service
-	service, err := corev1.NewService(ctx, fmt.Sprintf("%s-service", args.Name), &corev1.ServiceArgs{
+	serviceName := fmt.Sprintf("%s-service", args.Name)
+	service, err := corev1.NewService(ctx, serviceName, &corev1.ServiceArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(fmt.Sprintf("%s-service", args.Name)),
+			Name:      pulumi.String(serviceName),
 			Namespace: pulumi.String(args.Namespace),
+			Labels:    utils.CreateResourceLabels(args.Name, serviceName, args.Name, nil),
 			Annotations: pulumi.StringMap{
 				"prometheus.io/scrape": pulumi.String("true"),
 				"prometheus.io/port":   pulumi.Sprintf("%d", MetricsPort),
@@ -155,7 +162,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 			},
 		},
 		Spec: &corev1.ServiceSpecArgs{
-			Selector: args.AppLabels.Labels,
+			Selector: podLabels,
 			Ports: corev1.ServicePortArray{
 				&corev1.ServicePortArgs{
 					Port:       parseBuilderPort(args.BuilderEnv.BuilderPort),
@@ -176,17 +183,19 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	component.Service = service
 
 	// Create pod monitor
+	podMonitorName := fmt.Sprintf("%s-pod-monitor", args.Name)
 	_, err = crd.NewCustomResource(ctx, fmt.Sprintf("%s-svcmon", args.Name), &crd.CustomResourceArgs{
 		ApiVersion: pulumi.String("monitoring.coreos.com/v1"),
 		Kind:       pulumi.String("PodMonitor"),
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(fmt.Sprintf("%s-pod-monitor", args.Name)),
+			Name:      pulumi.String(podMonitorName),
 			Namespace: pulumi.String(args.Namespace),
+			Labels:    utils.CreateResourceLabels(args.Name, podMonitorName, args.Name, nil),
 		},
 		OtherFields: map[string]interface{}{
 			"spec": map[string]interface{}{
 				"selector": map[string]interface{}{
-					"matchLabels": args.AppLabels.Labels,
+					"matchLabels": podLabels,
 				},
 				"namespaceSelector": map[string]interface{}{
 					"any": true,

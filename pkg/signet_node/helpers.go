@@ -52,15 +52,6 @@ func CreatePersistentVolumeClaim(
 	return pvc, nil
 }
 
-// CreateResourceLabels creates a consistent set of Kubernetes labels for resources
-func CreateResourceLabels(name string) pulumi.StringMap {
-	return pulumi.StringMap{
-		"app":                       pulumi.String(name),
-		"app.kubernetes.io/name":    pulumi.String(name),
-		"app.kubernetes.io/part-of": pulumi.String(name),
-	}
-}
-
 // ResourceRequirements returns consistent resource requirements for pods
 func NewResourceRequirements(cpuLimit, memoryLimit, cpuRequest, memoryRequest string) *corev1.ResourceRequirementsArgs {
 	if cpuLimit == "" {
