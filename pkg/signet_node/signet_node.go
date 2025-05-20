@@ -3,6 +3,7 @@ package signet_node
 import (
 	"fmt"
 
+	"github.com/init4tech/signet-infra-components/pkg/utils"
 	crd "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apiextensions"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
 	corev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -84,44 +85,21 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		return nil, fmt.Errorf("failed to create execution jwt secret: %w", err)
 	}
 
-	executionConfigMap, err := corev1.NewConfigMap(ctx, "exex-configmap", &corev1.ConfigMapArgs{
-		Data: pulumi.StringMap{
-			"HOST_ZENITH_CONTRACT_ADDRESS":     args.Env.HostZenithAddress,
-			"RU_ORDERS_CONTRACT_ADDRESS":       args.Env.RuOrdersContractAddress,
-			"HOST_ORDERS_CONTRACT_ADDRESS":     args.Env.HostOrdersContractAddress,
-			"SIGNET_CHAIN_ID":                  args.Env.SignetChainId,
-			"BLOB_EXPLORER_URL":                args.Env.BlobExplorerUrl,
-			"SIGNET_STATIC_PATH":               args.Env.SignetStaticPath,
-			"SIGNET_DATABASE_PATH":             args.Env.SignetDatabasePath,
-			"RUST_LOG":                         args.Env.RustLog,
-			"IPC_ENDPOINT":                     args.Env.IpcEndpoint,
-			"RPC_PORT":                         args.Env.RpcPort,
-			"WS_RPC_PORT":                      args.Env.WsRpcPort,
-			"TX_FORWARD_URL":                   args.Env.TxForwardUrl,
-			"GENESIS_JSON_PATH":                args.Env.GenesisJsonPath,
-			"HOST_ZENITH_DEPLOY_HEIGHT":        args.Env.HostZenithDeployHeight,
-			"BASE_FEE_RECIPIENT":               args.Env.BaseFeeRecipient,
-			"HOST_PASSAGE_CONTRACT_ADDRESS":    args.Env.HostPassageContractAddress,
-			"HOST_TRANSACTOR_CONTRACT_ADDRESS": args.Env.HostTransactorContractAddress,
-			"RU_PASSAGE_CONTRACT_ADDRESS":      args.Env.RuPassageContractAddress,
-			"SIGNET_CL_URL":                    args.Env.SignetClUrl,
-			"SIGNET_PYLON_URL":                 args.Env.SignetPylonUrl,
-			"HOST_START_TIMESTAMP":             args.Env.HostStartTimestamp,
-			"HOST_SLOT_OFFSET":                 args.Env.HostSlotOffset,
-			"HOST_SLOT_DURATION":               args.Env.HostSlotDuration,
+	// Create ConfigMap for execution environment variables
+	executionConfigMap, err := utils.CreateConfigMap(
+		ctx,
+		"exex-configmap",
+		args.Namespace,
+		pulumi.StringMap{
+			"app.kubernetes.io/name":    pulumi.String("exex-configmap"),
+			"app.kubernetes.io/part-of": pulumi.String("exex-configmap"),
 		},
-		Metadata: &metav1.ObjectMetaArgs{
-			Name: pulumi.String("exex-configmap"),
-			Labels: pulumi.StringMap{
-				"app.kubernetes.io/name":    pulumi.String("exex-configmap"),
-				"app.kubernetes.io/part-of": pulumi.String("exex-configmap"),
-			},
-			Namespace: args.Namespace,
-		},
-	}, pulumi.Parent(component))
+		args.Env,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create execution configmap: %w", err)
 	}
+	component.SignetNodeConfigMap = executionConfigMap
 
 	// SERVICE
 
@@ -362,22 +340,25 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		return nil, fmt.Errorf("failed to create lighthouse data pvc: %w", err)
 	}
 
-	consensusConfigMap, err := corev1.NewConfigMap(ctx, fmt.Sprintf("%s-env-config", "consensus-configmap"), &corev1.ConfigMapArgs{
-		Data: pulumi.StringMap{
-			"EXAMPLE": pulumi.String("example"),
+	// Create ConfigMap for consensus environment variables
+	consensusEnv := map[string]pulumi.StringInput{
+		"EXAMPLE": pulumi.String("example"),
+	}
+
+	consensusConfigMap, err := utils.CreateConfigMap(
+		ctx,
+		"consensus-configmap-env-config",
+		args.Namespace,
+		pulumi.StringMap{
+			"app.kubernetes.io/name":    pulumi.String("consensus-configmap-env-config"),
+			"app.kubernetes.io/part-of": pulumi.String("consensus-configmap"),
 		},
-		Metadata: &metav1.ObjectMetaArgs{
-			Name: pulumi.Sprintf("%s-env-config", "consensus-configmap"),
-			Labels: pulumi.StringMap{
-				"app.kubernetes.io/name":    pulumi.Sprintf("%s-env-config", "consensus-configmap"),
-				"app.kubernetes.io/part-of": pulumi.Sprintf("%s", "consensus-configmap"),
-			},
-			Namespace: args.Namespace,
-		},
-	}, pulumi.Parent(component))
+		consensusEnv,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create consensus configmap: %w", err)
 	}
+	component.LighthouseConfigMap = consensusConfigMap
 
 	lighthouseInternalService, err := corev1.NewService(ctx, fmt.Sprintf("%s-service", consensusClientName), &corev1.ServiceArgs{
 		Spec: &corev1.ServiceSpecArgs{

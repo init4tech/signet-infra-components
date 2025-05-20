@@ -7,41 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCamelToSnake(t *testing.T) {
-	testCases := []struct {
-		input  string
-		output string
-	}{
-		{
-			input:  "BuilderPort",
-			output: "BUILDER_PORT",
-		},
-		{
-			input:  "HostRpcUrl",
-			output: "HOST_RPC_URL",
-		},
-		{
-			input:  "AWSRegion",
-			output: "AWS_REGION",
-		},
-		{
-			input:  "OtelExporterOtlpEndpoint",
-			output: "OTEL_EXPORTER_OTLP_ENDPOINT",
-		},
-		{
-			input:  "simpleText",
-			output: "SIMPLE_TEXT",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.input, func(t *testing.T) {
-			result := CamelToSnake(tc.input)
-			assert.Equal(t, tc.output, result)
-		})
-	}
-}
-
 func TestCreateKMSPolicy(t *testing.T) {
 	// Test with a simple key ARN
 	keyArn := "arn:aws:kms:us-west-2:123456789012:key/1234abcd-12ab-34cd-56ef-1234567890ab"
@@ -62,10 +27,10 @@ func TestCreateKMSPolicy(t *testing.T) {
 	assert.NotNil(t, anotherPolicy)
 }
 
-func TestCreateEnvVars(t *testing.T) {
+func TestBuilderEnvGetEnvMap(t *testing.T) {
 	// Create a test BuilderEnv with some values
 	env := BuilderEnv{
-		BuilderPort:   pulumi.Int(8080),
+		BuilderPort:   pulumi.String("8080"),
 		BuilderKey:    pulumi.String("test-key"),
 		HostRpcUrl:    pulumi.String("http://host-rpc"),
 		RollupRpcUrl:  pulumi.String("http://rollup-rpc"),
@@ -74,57 +39,22 @@ func TestCreateEnvVars(t *testing.T) {
 		AwsAccountId:  pulumi.String("123456789012"),
 	}
 
-	// Get the environment variables
-	envVars := CreateEnvVars(env)
-
-	// Test that the array is not nil and has the correct length
-	// We expect one env var for BuilderPort plus one for each of the other fields
-	assert.NotNil(t, envVars)
-
-	// Count the non-nil fields in env to determine expected size
-	// We need to do this because BuilderEnv has many fields and we're only setting a few
-	expectedSize := 0
-	if env.BuilderPort != nil {
-		expectedSize++
-	}
-	envVarMap := GetEnvironmentVarsFromStruct(env)
-	expectedSize += len(envVarMap)
-
-	// Check if the array is the expected size
-	assert.Len(t, envVars, expectedSize)
-
-	// Test that specific environment variables are set correctly
-	// Due to the nature of Pulumi outputs, we can only test basics here
-	// Just check that we have a non-empty array
-	assert.Greater(t, len(envVars), 0, "Should have at least one environment variable")
-}
-
-func TestGetEnvironmentVarsFromStruct(t *testing.T) {
-	// Create a test BuilderEnv with some values
-	env := BuilderEnv{
-		BuilderPort: pulumi.Int(8080),
-		BuilderKey:  pulumi.String("test-key"),
-		HostRpcUrl:  pulumi.String("http://host-rpc"),
-		AwsRegion:   pulumi.String("us-west-2"),
-	}
-
 	// Get the environment variables map
-	envVars := GetEnvironmentVarsFromStruct(env)
+	envMap := env.GetEnvMap()
 
-	// Test that the map is not nil and has the expected keys
-	assert.NotNil(t, envVars)
+	// Test that the map is not nil
+	assert.NotNil(t, envMap)
 
-	// BuilderPort should be excluded (handled specially)
-	_, hasBuilderPort := envVars["BUILDER_PORT"]
-	assert.False(t, hasBuilderPort, "BUILDER_PORT should not be in the map")
+	// Check that specific environment variables are in the map
+	_, hasBuilderPort := envMap["BUILDER_PORT"]
+	assert.True(t, hasBuilderPort, "BUILDER_PORT should be in the map")
 
-	// Other fields should be included
-	_, hasBuilderKey := envVars["BUILDER_KEY"]
+	_, hasBuilderKey := envMap["BUILDER_KEY"]
 	assert.True(t, hasBuilderKey, "BUILDER_KEY should be in the map")
 
-	_, hasHostRpcUrl := envVars["HOST_RPC_URL"]
+	_, hasHostRpcUrl := envMap["HOST_RPC_URL"]
 	assert.True(t, hasHostRpcUrl, "HOST_RPC_URL should be in the map")
 
-	_, hasAwsRegion := envVars["AWS_REGION"]
+	_, hasAwsRegion := envMap["AWS_REGION"]
 	assert.True(t, hasAwsRegion, "AWS_REGION should be in the map")
 }

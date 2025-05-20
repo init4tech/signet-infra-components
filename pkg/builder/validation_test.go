@@ -74,7 +74,7 @@ func TestBuilderComponentArgsValidate(t *testing.T) {
 			Image:     "test-image:latest",
 			AppLabels: AppLabels{Labels: pulumi.StringMap{"app": pulumi.String("test")}},
 			BuilderEnv: BuilderEnv{
-				BuilderPort:              pulumi.Int(8080),
+				BuilderPort:              pulumi.String("8080"),
 				BuilderKey:               pulumi.String("test-key"),
 				HostRpcUrl:               pulumi.String("http://host-rpc"),
 				RollupRpcUrl:             pulumi.String("http://rollup-rpc"),
@@ -114,7 +114,7 @@ func TestBuilderEnvValidate(t *testing.T) {
 	// Test with just BuilderPort set
 	t.Run("missing builder key", func(t *testing.T) {
 		env := BuilderEnv{
-			BuilderPort: pulumi.Int(8080),
+			BuilderPort: pulumi.String("8080"),
 		}
 		err := env.Validate()
 		assert.Error(t, err)
