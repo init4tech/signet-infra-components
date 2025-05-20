@@ -2,12 +2,10 @@
 package builder
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 
 	"github.com/init4tech/signet-infra-components/pkg/utils"
-	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	crd "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apiextensions"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
 	corev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -52,66 +50,6 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 		return nil, fmt.Errorf("failed to create service account: %w", err)
 	}
 	component.ServiceAccount = sa
-
-	// Create IAM role
-	assumeRolePolicy := IAMPolicy{
-		Version: "2012-10-17",
-		Statement: []IAMStatement{
-			{
-				Sid:    "AllowEksAuthToAssumeRoleForPodIdentity",
-				Effect: "Allow",
-				Principal: struct {
-					Service []string `json:"Service"`
-				}{
-					Service: []string{
-						"pods.eks.amazonaws.com",
-						"ec2.amazonaws.com",
-					},
-				},
-				Action: []string{
-					"sts:AssumeRole",
-					"sts:TagSession",
-				},
-			},
-		},
-	}
-
-	assumeRolePolicyJSON, err := json.Marshal(assumeRolePolicy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal assume role policy: %w", err)
-	}
-
-	role, err := iam.NewRole(ctx, fmt.Sprintf("%s-role", args.Name), &iam.RoleArgs{
-		AssumeRolePolicy: pulumi.String(assumeRolePolicyJSON),
-		Description:      pulumi.String(fmt.Sprintf("Role for %s pod to assume", args.Name)),
-		Tags: pulumi.StringMap{
-			"Name": pulumi.String(fmt.Sprintf("%s-role", args.Name)),
-		},
-	}, pulumi.Parent(component))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create IAM role: %w", err)
-	}
-	component.IAMRole = role
-
-	// Create KMS policy
-	policyJSON := CreateKMSPolicy(args.BuilderEnv.BuilderKey)
-
-	policy, err := iam.NewPolicy(ctx, fmt.Sprintf("%s-policy", args.Name), &iam.PolicyArgs{
-		Policy: policyJSON,
-	}, pulumi.Parent(component))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create IAM policy: %w", err)
-	}
-	component.IAMPolicy = policy
-
-	// Attach policy to role
-	_, err = iam.NewRolePolicyAttachment(ctx, fmt.Sprintf("%s-role-policy-attachment", args.Name), &iam.RolePolicyAttachmentArgs{
-		Role:      role.Name,
-		PolicyArn: policy.Arn,
-	}, pulumi.Parent(component))
-	if err != nil {
-		return nil, fmt.Errorf("failed to attach policy to role: %w", err)
-	}
 
 	// Create ConfigMap for environment variables
 	configMap, err := utils.CreateConfigMap(
@@ -199,7 +137,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 				},
 			},
 		},
-	}, pulumi.DependsOn([]pulumi.Resource{role, policy}), pulumi.DeleteBeforeReplace(true), pulumi.Parent(component))
+	}, pulumi.DeleteBeforeReplace(true), pulumi.Parent(component))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create deployment: %w", err)
 	}
