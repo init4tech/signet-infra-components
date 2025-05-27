@@ -19,7 +19,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	component := &SignetNodeComponent{
 		SignetNodeComponentArgs: args,
 	}
-	err := ctx.RegisterComponentResource("the-builder:index:SignetNode", args.Name, component)
+	err := ctx.RegisterComponentResource("signet:index:SignetNode", args.Name, component)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register component resource: %w", err)
 	}
