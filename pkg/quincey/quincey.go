@@ -167,7 +167,11 @@ func createService(ctx *pulumi.Context, args *QuinceyComponentArgs, deployment *
 	labels := utils.CreateResourceLabels(ComponentName, ServiceName, "signet", nil)
 
 	containerPortInt := args.Env.QuinceyPort.ToStringOutput().ApplyT(func(s string) int {
-		port, _ := strconv.Atoi(s)
+		port, err := strconv.Atoi(s)
+		if err != nil {
+			fmt.Printf("Error converting QuinceyPort to integer: %v. Using default port 8080.\n", err)
+			return 8080
+		}
 		return port
 	}).(pulumi.IntOutput)
 
@@ -195,7 +199,11 @@ func createVirtualService(ctx *pulumi.Context, args *QuinceyComponentArgs, servi
 	labels := utils.CreateResourceLabels(ComponentName, ServiceName, "signet", nil)
 
 	containerPortInt := args.Env.QuinceyPort.ToStringOutput().ApplyT(func(s string) int {
-		port, _ := strconv.Atoi(s)
+		port, err := strconv.Atoi(s)
+		if err != nil {
+			fmt.Printf("Error converting QuinceyPort to integer: %v. Using default port 8080.\n", err)
+			return 8080
+		}
 		return port
 	}).(pulumi.IntOutput)
 
