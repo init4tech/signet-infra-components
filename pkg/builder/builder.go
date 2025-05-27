@@ -14,6 +14,19 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+// parseBuilderPort converts a port string to an integer with a default fallback
+func parseBuilderPort(portStr pulumi.StringInput) pulumi.IntOutput {
+	return pulumi.All(portStr).ApplyT(func(inputs []interface{}) int {
+		portStr := inputs[0].(string)
+		var port int
+		if _, err := fmt.Sscanf(portStr, "%d", &port); err != nil {
+			// Default to 8080 if there's an error parsing the port
+			return 8080
+		}
+		return port
+	}).(pulumi.IntOutput)
+}
+
 // NewBuilder creates a new builder component with the given configuration.
 func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.ResourceOption) (*BuilderComponent, error) {
 	if err := args.Validate(); err != nil {
@@ -147,15 +160,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 							},
 							Ports: corev1.ContainerPortArray{
 								&corev1.ContainerPortArgs{
-									ContainerPort: pulumi.All(args.BuilderEnv.BuilderPort).ApplyT(func(inputs []interface{}) int {
-										portStr := inputs[0].(string)
-										var port int
-										if _, err := fmt.Sscanf(portStr, "%d", &port); err != nil {
-											// Default to 8080 if there's an error parsing the port
-											return 8080
-										}
-										return port
-									}).(pulumi.IntInput),
+									ContainerPort: parseBuilderPort(args.BuilderEnv.BuilderPort),
 								},
 								&corev1.ContainerPortArgs{
 									ContainerPort: pulumi.Int(MetricsPort),
@@ -174,15 +179,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 							LivenessProbe: &corev1.ProbeArgs{
 								HttpGet: &corev1.HTTPGetActionArgs{
 									Path: pulumi.String("/healthcheck"),
-									Port: pulumi.All(args.BuilderEnv.BuilderPort).ApplyT(func(inputs []interface{}) int {
-										portStr := inputs[0].(string)
-										var port int
-										if _, err := fmt.Sscanf(portStr, "%d", &port); err != nil {
-											// Default to 8080 if there's an error parsing the port
-											return 8080
-										}
-										return port
-									}).(pulumi.IntInput),
+									Port: parseBuilderPort(args.BuilderEnv.BuilderPort),
 								},
 								InitialDelaySeconds: pulumi.Int(5),
 								PeriodSeconds:       pulumi.Int(1),
@@ -192,15 +189,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 							ReadinessProbe: &corev1.ProbeArgs{
 								HttpGet: &corev1.HTTPGetActionArgs{
 									Path: pulumi.String("/healthcheck"),
-									Port: pulumi.All(args.BuilderEnv.BuilderPort).ApplyT(func(inputs []interface{}) int {
-										portStr := inputs[0].(string)
-										var port int
-										if _, err := fmt.Sscanf(portStr, "%d", &port); err != nil {
-											// Default to 8080 if there's an error parsing the port
-											return 8080
-										}
-										return port
-									}).(pulumi.IntInput),
+									Port: parseBuilderPort(args.BuilderEnv.BuilderPort),
 								},
 								InitialDelaySeconds: pulumi.Int(5),
 								PeriodSeconds:       pulumi.Int(10),
@@ -231,25 +220,9 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 			Selector: args.AppLabels.Labels,
 			Ports: corev1.ServicePortArray{
 				&corev1.ServicePortArgs{
-					Port: pulumi.All(args.BuilderEnv.BuilderPort).ApplyT(func(inputs []interface{}) int {
-						portStr := inputs[0].(string)
-						var port int
-						if _, err := fmt.Sscanf(portStr, "%d", &port); err != nil {
-							// Default to 8080 if there's an error parsing the port
-							return 8080
-						}
-						return port
-					}).(pulumi.IntInput),
-					TargetPort: pulumi.All(args.BuilderEnv.BuilderPort).ApplyT(func(inputs []interface{}) int {
-						portStr := inputs[0].(string)
-						var port int
-						if _, err := fmt.Sscanf(portStr, "%d", &port); err != nil {
-							// Default to 8080 if there's an error parsing the port
-							return 8080
-						}
-						return port
-					}).(pulumi.IntInput),
-					Name: pulumi.String("http"),
+					Port:       parseBuilderPort(args.BuilderEnv.BuilderPort),
+					TargetPort: parseBuilderPort(args.BuilderEnv.BuilderPort),
+					Name:       pulumi.String("http"),
 				},
 				&corev1.ServicePortArgs{
 					Port:       pulumi.Int(MetricsPort),
