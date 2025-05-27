@@ -33,42 +33,42 @@ type BuilderComponentArgs struct {
 
 // BuilderEnv contains all environment variables required by the builder service.
 type BuilderEnv struct {
-	AuthTokenRefreshInterval pulumi.StringInput `pulumi:"authTokenRefreshInterval"`
-	AwsAccountId             pulumi.StringInput `pulumi:"awsAccountId"`
-	AwsAccessKeyId           pulumi.StringInput `pulumi:"awsAccessKeyId"`
-	AwsRegion                pulumi.StringInput `pulumi:"awsRegion"`
-	AwsSecretAccessKey       pulumi.StringInput `pulumi:"awsSecretAccessKey"`
-	BlockConfirmationBuffer  pulumi.StringInput `pulumi:"blockConfirmationBuffer"`
-	BlockQueryCutoff         pulumi.StringInput `pulumi:"blockQueryCutoff"`
-	BlockQueryStart          pulumi.StringInput `pulumi:"blockQueryStart"`
-	BuilderHelperAddress     pulumi.StringInput `pulumi:"builderHelperAddress"`
-	BuilderKey               pulumi.StringInput `pulumi:"builderKey"`
-	BuilderPort              pulumi.StringInput `pulumi:"builderPort"`
-	BuilderRewardsAddress    pulumi.StringInput `pulumi:"builderRewardsAddress"`
-	ChainOffset              pulumi.StringInput `pulumi:"chainOffset"`
-	ConcurrentLimit          pulumi.StringInput `pulumi:"concurrentLimit"`
-	HostChainId              pulumi.StringInput `pulumi:"hostChainId"`
-	HostRpcUrl               pulumi.StringInput `pulumi:"hostRpcUrl"`
-	OauthAudience            pulumi.StringInput `pulumi:"oauthAudience"`
-	OauthAuthenticateUrl     pulumi.StringInput `pulumi:"oauthAuthenticateUrl"`
-	OAuthClientId            pulumi.StringInput `pulumi:"oauthClientId"`
-	OauthClientSecret        pulumi.StringInput `pulumi:"oauthClientSecret"`
-	OauthIssuer              pulumi.StringInput `pulumi:"oauthIssuer"`
-	OauthTokenUrl            pulumi.StringInput `pulumi:"oauthTokenUrl"`
+	AuthTokenRefreshInterval pulumi.StringInput `pulumi:"authTokenRefreshInterval" validate:"required"`
+	AwsAccountId             pulumi.StringInput `pulumi:"awsAccountId" validate:"required"`
+	AwsAccessKeyId           pulumi.StringInput `pulumi:"awsAccessKeyId" validate:"required"`
+	AwsRegion                pulumi.StringInput `pulumi:"awsRegion" validate:"required"`
+	AwsSecretAccessKey       pulumi.StringInput `pulumi:"awsSecretAccessKey" validate:"required"`
+	BlockConfirmationBuffer  pulumi.StringInput `pulumi:"blockConfirmationBuffer" validate:"required"`
+	BlockQueryCutoff         pulumi.StringInput `pulumi:"blockQueryCutoff" validate:"required"`
+	BlockQueryStart          pulumi.StringInput `pulumi:"blockQueryStart" validate:"required"`
+	BuilderHelperAddress     pulumi.StringInput `pulumi:"builderHelperAddress" validate:"required"`
+	BuilderKey               pulumi.StringInput `pulumi:"builderKey" validate:"required"`
+	BuilderPort              pulumi.StringInput `pulumi:"builderPort" validate:"required"`
+	BuilderRewardsAddress    pulumi.StringInput `pulumi:"builderRewardsAddress" validate:"required"`
+	ChainOffset              pulumi.StringInput `pulumi:"chainOffset" validate:"required"`
+	ConcurrentLimit          pulumi.StringInput `pulumi:"concurrentLimit" validate:"required"`
+	HostChainId              pulumi.StringInput `pulumi:"hostChainId" validate:"required"`
+	HostRpcUrl               pulumi.StringInput `pulumi:"hostRpcUrl" validate:"required"`
+	OauthAudience            pulumi.StringInput `pulumi:"oauthAudience" validate:"required"`
+	OauthAuthenticateUrl     pulumi.StringInput `pulumi:"oauthAuthenticateUrl" validate:"required"`
+	OAuthClientId            pulumi.StringInput `pulumi:"oauthClientId" validate:"required"`
+	OauthClientSecret        pulumi.StringInput `pulumi:"oauthClientSecret" validate:"required"`
+	OauthIssuer              pulumi.StringInput `pulumi:"oauthIssuer" validate:"required"`
+	OauthTokenUrl            pulumi.StringInput `pulumi:"oauthTokenUrl" validate:"required"`
 	OtelExporterOtlpEndpoint pulumi.StringInput `pulumi:"otelExporterOtlpEndpoint"`
-	QuinceyUrl               pulumi.StringInput `pulumi:"quinceyUrl"`
-	RollupBlockGasLimit      pulumi.StringInput `pulumi:"rollupBlockGasLimit"`
-	RollupChainId            pulumi.StringInput `pulumi:"rollupChainId"`
-	RollupRpcUrl             pulumi.StringInput `pulumi:"rollupRpcUrl"`
+	QuinceyUrl               pulumi.StringInput `pulumi:"quinceyUrl" validate:"required"`
+	RollupBlockGasLimit      pulumi.StringInput `pulumi:"rollupBlockGasLimit" validate:"required"`
+	RollupChainId            pulumi.StringInput `pulumi:"rollupChainId" validate:"required"`
+	RollupRpcUrl             pulumi.StringInput `pulumi:"rollupRpcUrl" validate:"required"`
 	RustLog                  pulumi.StringInput `pulumi:"rustLog"`
-	SlotOffset               pulumi.StringInput `pulumi:"slotOffset"`
-	StartTimestamp           pulumi.StringInput `pulumi:"startTimestamp"`
-	SubmitViaCallData        pulumi.StringInput `pulumi:"submitViaCallData"`
-	TargetSlotTime           pulumi.StringInput `pulumi:"targetSlotTime"`
-	TxBroadcastUrls          pulumi.StringInput `pulumi:"txBroadcastUrls"`
-	TxPoolCacheDuration      pulumi.StringInput `pulumi:"txPoolCacheDuration"`
-	TxPoolUrl                pulumi.StringInput `pulumi:"txPoolUrl"`
-	ZenithAddress            pulumi.StringInput `pulumi:"zenithAddress"`
+	SlotOffset               pulumi.StringInput `pulumi:"slotOffset" validate:"required"`
+	StartTimestamp           pulumi.StringInput `pulumi:"startTimestamp" validate:"required"`
+	SubmitViaCallData        pulumi.StringInput `pulumi:"submitViaCallData" validate:"required"`
+	TargetSlotTime           pulumi.StringInput `pulumi:"targetSlotTime" validate:"required"`
+	TxBroadcastUrls          pulumi.StringInput `pulumi:"txBroadcastUrls" validate:"required"`
+	TxPoolCacheDuration      pulumi.StringInput `pulumi:"txPoolCacheDuration" validate:"required"`
+	TxPoolUrl                pulumi.StringInput `pulumi:"txPoolUrl" validate:"required"`
+	ZenithAddress            pulumi.StringInput `pulumi:"zenithAddress" validate:"required"`
 }
 
 // GetEnvMap implements the utils.EnvProvider interface
