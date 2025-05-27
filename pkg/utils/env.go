@@ -102,24 +102,47 @@ func getStringValue(value interface{}) pulumi.StringInput {
 
 // CamelToSnake converts a camelCase string to SNAKE_CASE
 func CamelToSnake(s string) string {
-	var result strings.Builder
-
-	// Handle consecutive uppercase characters (acronyms)
-	for i, r := range s {
-		if unicode.IsUpper(r) {
-			// Add underscore if not the first character and either:
-			// 1. Previous character is lowercase, or
-			// 2. Not the last character and next character is lowercase (end of acronym)
-			needsUnderscore := i > 0 && (unicode.IsLower(rune(s[i-1])) ||
-				(i < len(s)-1 && unicode.IsLower(rune(s[i+1])) && i > 1 && unicode.IsUpper(rune(s[i-1]))))
-
-			if needsUnderscore {
-				result.WriteRune('_')
-			}
-			result.WriteRune(unicode.ToUpper(r))
-		} else {
-			result.WriteRune(unicode.ToUpper(r))
-		}
+	if len(s) == 0 {
+		return ""
 	}
+
+	var result strings.Builder
+	runes := []rune(s)
+
+	for i, currentRune := range runes {
+		upperRune := unicode.ToUpper(currentRune)
+
+		// Determine if we need to add an underscore before this character
+		shouldAddUnderscore := false
+
+		if unicode.IsUpper(currentRune) && i > 0 {
+			prevRune := runes[i-1]
+
+			// Pattern 1: lowercase followed by uppercase (word boundary)
+			// "camelCase" -> "CAMEL_CASE"
+			if unicode.IsLower(prevRune) {
+				shouldAddUnderscore = true
+			}
+
+			// Pattern 2: End of acronym detection
+			// "APIVersion" -> "API_VERSION" (at 'V')
+			if hasNextChar := i < len(runes)-1; hasNextChar {
+				nextRune := runes[i+1]
+				isEndOfAcronym := unicode.IsLower(nextRune) &&
+					i > 1 &&
+					unicode.IsUpper(prevRune)
+
+				if isEndOfAcronym {
+					shouldAddUnderscore = true
+				}
+			}
+		}
+
+		if shouldAddUnderscore {
+			result.WriteRune('_')
+		}
+		result.WriteRune(upperRune)
+	}
+
 	return result.String()
 }
