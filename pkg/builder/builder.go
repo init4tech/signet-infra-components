@@ -4,6 +4,7 @@ package builder
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/init4tech/signet-infra-components/pkg/utils"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
@@ -18,12 +19,11 @@ import (
 func parseBuilderPort(portStr pulumi.StringInput) pulumi.IntOutput {
 	return pulumi.All(portStr).ApplyT(func(inputs []interface{}) int {
 		portStr := inputs[0].(string)
-		var port int
-		if _, err := fmt.Sscanf(portStr, "%d", &port); err != nil {
-			// Default to 8080 if there's an error parsing the port
-			return 8080
+		if port, err := strconv.Atoi(portStr); err == nil {
+			return port
 		}
-		return port
+		// Default to 8080 if there's an error parsing the port
+		return 8080
 	}).(pulumi.IntOutput)
 }
 
