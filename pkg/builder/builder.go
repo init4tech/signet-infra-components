@@ -3,7 +3,6 @@ package builder
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/init4tech/signet-infra-components/pkg/utils"
 	crd "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apiextensions"
@@ -15,14 +14,7 @@ import (
 
 // parseBuilderPort converts a port string to an integer with a default fallback
 func parseBuilderPort(portStr pulumi.StringInput) pulumi.IntOutput {
-	return pulumi.All(portStr).ApplyT(func(inputs []interface{}) int {
-		portStr := inputs[0].(string)
-		if port, err := strconv.Atoi(portStr); err == nil {
-			return port
-		}
-		// Default to 8080 if there's an error parsing the port
-		return 8080
-	}).(pulumi.IntOutput)
+	return utils.ParsePortWithDefault(portStr, DefaultBuilderPort)
 }
 
 // NewBuilder creates a new builder component with the given configuration.
@@ -34,13 +26,13 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	component := &BuilderComponent{
 		BuilderComponentArgs: args,
 	}
-	err := ctx.RegisterComponentResource("signet:index:Builder", args.Name, component)
+	err := ctx.RegisterComponentResource(ComponentKind, args.Name, component)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register component resource: %w", err)
 	}
 
 	// Create service account
-	serviceAccountName := fmt.Sprintf("%s-sa", args.Name)
+	serviceAccountName := fmt.Sprintf("%s%s", args.Name, ServiceAccountSuffix)
 	sa, err := corev1.NewServiceAccount(ctx, serviceAccountName, &corev1.ServiceAccountArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(serviceAccountName),
@@ -54,7 +46,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	component.ServiceAccount = sa
 
 	// Create ConfigMap for environment variables
-	configMapName := fmt.Sprintf("%s-env", args.Name)
+	configMapName := fmt.Sprintf("%s%s", args.Name, ConfigMapSuffix)
 	configMap, err := utils.CreateConfigMap(
 		ctx,
 		configMapName,
@@ -72,7 +64,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	podLabels["app"] = pulumi.String(args.Name)
 
 	// Create deployment
-	deploymentName := fmt.Sprintf("%s-deployment", args.Name)
+	deploymentName := fmt.Sprintf("%s%s", args.Name, DeploymentSuffix)
 	deployment, err := appsv1.NewDeployment(ctx, deploymentName, &appsv1.DeploymentArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(deploymentName),
@@ -109,33 +101,24 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 									ContainerPort: pulumi.Int(MetricsPort),
 								},
 							},
-							Resources: &corev1.ResourceRequirementsArgs{
-								Limits: pulumi.StringMap{
-									"cpu":    pulumi.String("2"),
-									"memory": pulumi.String("2Gi"),
-								},
-								Requests: pulumi.StringMap{
-									"cpu":    pulumi.String("1"),
-									"memory": pulumi.String("1Gi"),
-								},
-							},
+							Resources: utils.CreateResourceRequirements(DefaultCPULimit, DefaultMemoryLimit, DefaultCPURequest, DefaultMemoryRequest),
 							LivenessProbe: &corev1.ProbeArgs{
 								HttpGet: &corev1.HTTPGetActionArgs{
-									Path: pulumi.String("/healthcheck"),
+									Path: pulumi.String(HealthCheckPath),
 									Port: parseBuilderPort(args.BuilderEnv.BuilderPort),
 								},
-								InitialDelaySeconds: pulumi.Int(5),
-								PeriodSeconds:       pulumi.Int(1),
-								TimeoutSeconds:      pulumi.Int(1),
-								FailureThreshold:    pulumi.Int(3),
+								InitialDelaySeconds: pulumi.Int(ProbeInitialDelaySeconds),
+								PeriodSeconds:       pulumi.Int(LivenessProbePeriod),
+								TimeoutSeconds:      pulumi.Int(ProbeTimeoutSeconds),
+								FailureThreshold:    pulumi.Int(ProbeFailureThreshold),
 							},
 							ReadinessProbe: &corev1.ProbeArgs{
 								HttpGet: &corev1.HTTPGetActionArgs{
-									Path: pulumi.String("/healthcheck"),
+									Path: pulumi.String(HealthCheckPath),
 									Port: parseBuilderPort(args.BuilderEnv.BuilderPort),
 								},
-								InitialDelaySeconds: pulumi.Int(5),
-								PeriodSeconds:       pulumi.Int(10),
+								InitialDelaySeconds: pulumi.Int(ProbeInitialDelaySeconds),
+								PeriodSeconds:       pulumi.Int(ProbePeriodSeconds),
 							},
 						},
 					},
@@ -149,16 +132,16 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	component.Deployment = deployment
 
 	// Create service
-	serviceName := fmt.Sprintf("%s-service", args.Name)
+	serviceName := fmt.Sprintf("%s%s", args.Name, ServiceSuffix)
 	service, err := corev1.NewService(ctx, serviceName, &corev1.ServiceArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(serviceName),
 			Namespace: pulumi.String(args.Namespace),
 			Labels:    utils.CreateResourceLabels(args.Name, serviceName, args.Name, nil),
 			Annotations: pulumi.StringMap{
-				"prometheus.io/scrape": pulumi.String("true"),
-				"prometheus.io/port":   pulumi.Sprintf("%d", MetricsPort),
-				"prometheus.io/path":   pulumi.String("/metrics"),
+				PrometheusScrapeAnnotation: pulumi.String("true"),
+				PrometheusPortAnnotation:   pulumi.Sprintf("%d", MetricsPort),
+				PrometheusPathAnnotation:   pulumi.String(MetricsPath),
 			},
 		},
 		Spec: &corev1.ServiceSpecArgs{
@@ -183,8 +166,8 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	component.Service = service
 
 	// Create pod monitor
-	podMonitorName := fmt.Sprintf("%s-pod-monitor", args.Name)
-	_, err = crd.NewCustomResource(ctx, fmt.Sprintf("%s-svcmon", args.Name), &crd.CustomResourceArgs{
+	podMonitorName := fmt.Sprintf("%s%s", args.Name, PodMonitorSuffix)
+	_, err = crd.NewCustomResource(ctx, fmt.Sprintf("%s%s", args.Name, ServiceMonitorSuffix), &crd.CustomResourceArgs{
 		ApiVersion: pulumi.String("monitoring.coreos.com/v1"),
 		Kind:       pulumi.String("PodMonitor"),
 		Metadata: &metav1.ObjectMetaArgs{

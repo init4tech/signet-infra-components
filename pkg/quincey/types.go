@@ -18,18 +18,6 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-// Common constants used throughout the package
-const (
-	// ServiceName is the name of the Quincey service
-	ServiceName = "quincey-server"
-	// AppLabel is the label used to identify Quincey resources
-	AppLabel = "quincey-server"
-	// DefaultMetricsPort is the default port for metrics
-	DefaultMetricsPort = 9000
-	// ComponentName is the name of this component
-	ComponentName = "quincey"
-)
-
 // QuinceyComponent represents a complete Quincey deployment in Kubernetes.
 // It manages all the necessary Kubernetes resources for running the Quincey service.
 type QuinceyComponent struct {

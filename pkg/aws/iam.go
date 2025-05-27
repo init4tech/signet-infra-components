@@ -56,22 +56,22 @@ func CreateIAMResources(
 ) (*IAMResources, error) {
 	// Create IAM role with assume role policy for EKS pod identity
 	assumeRolePolicy := IAMPolicy{
-		Version: "2012-10-17",
+		Version: IAMPolicyVersion,
 		Statement: []IAMStatement{
 			{
-				Sid:    "AllowEksAuthToAssumeRoleForPodIdentity",
-				Effect: "Allow",
+				Sid:    EKSAssumeRoleStatementSid,
+				Effect: EffectAllow,
 				Principal: struct {
 					Service []string `json:"Service"`
 				}{
 					Service: []string{
-						"pods.eks.amazonaws.com",
-						"ec2.amazonaws.com",
+						EKSPodsService,
+						EC2Service,
 					},
 				},
 				Action: []string{
-					"sts:AssumeRole",
-					"sts:TagSession",
+					STSAssumeRoleAction,
+					STSTagSessionAction,
 				},
 			},
 		},
@@ -82,11 +82,11 @@ func CreateIAMResources(
 		return nil, fmt.Errorf("failed to marshal assume role policy: %w", err)
 	}
 
-	role, err := iam.NewRole(ctx, fmt.Sprintf("%s-role", name), &iam.RoleArgs{
+	role, err := iam.NewRole(ctx, fmt.Sprintf("%s%s", name, RoleSuffix), &iam.RoleArgs{
 		AssumeRolePolicy: pulumi.String(assumeRolePolicyJSON),
 		Description:      pulumi.String(fmt.Sprintf("Role for %s pod to assume", serviceName)),
 		Tags: pulumi.StringMap{
-			"Name": pulumi.String(fmt.Sprintf("%s-role", name)),
+			"Name": pulumi.String(fmt.Sprintf("%s%s", name, RoleSuffix)),
 		},
 	}, pulumi.Parent(parent))
 	if err != nil {
@@ -96,7 +96,7 @@ func CreateIAMResources(
 	// Create KMS policy for the specified key
 	policyJSON := CreateKMSPolicy(keyArn)
 
-	policy, err := iam.NewPolicy(ctx, fmt.Sprintf("%s-policy", name), &iam.PolicyArgs{
+	policy, err := iam.NewPolicy(ctx, fmt.Sprintf("%s%s", name, PolicySuffix), &iam.PolicyArgs{
 		Policy: policyJSON,
 	}, pulumi.Parent(parent))
 	if err != nil {
@@ -104,7 +104,7 @@ func CreateIAMResources(
 	}
 
 	// Attach the KMS policy to the role
-	policyAttachment, err := iam.NewRolePolicyAttachment(ctx, fmt.Sprintf("%s-role-policy-attachment", name), &iam.RolePolicyAttachmentArgs{
+	policyAttachment, err := iam.NewRolePolicyAttachment(ctx, fmt.Sprintf("%s%s", name, RolePolicyAttachmentSuffix), &iam.RolePolicyAttachmentArgs{
 		Role:      role.Name,
 		PolicyArn: policy.Arn,
 	}, pulumi.Parent(parent))
@@ -133,13 +133,13 @@ func CreateIAMResources(
 //   - kms:GetPublicKey: Allows retrieving the public key associated with the KMS key
 func CreateKMSPolicy(key pulumi.StringInput) pulumi.StringOutput {
 	policy := KMSPolicy{
-		Version: "2012-10-17",
+		Version: IAMPolicyVersion,
 		Statement: []KMSStatement{
 			{
-				Effect: "Allow",
+				Effect: EffectAllow,
 				Action: []string{
-					"kms:Sign",
-					"kms:GetPublicKey",
+					KMSSignAction,
+					KMSGetPublicKeyAction,
 				},
 				Resource: key,
 			},

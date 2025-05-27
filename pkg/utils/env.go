@@ -2,6 +2,7 @@ package utils
 
 import (
 	"reflect"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -145,4 +146,86 @@ func CamelToSnake(s string) string {
 	}
 
 	return result.String()
+}
+
+// ParsePortWithDefault converts a port string to an integer with a default fallback
+// This provides consistent port parsing across all components
+func ParsePortWithDefault(portStr pulumi.StringInput, defaultPort int) pulumi.IntOutput {
+	return pulumi.All(portStr).ApplyT(func(inputs []interface{}) int {
+		portStr := inputs[0].(string)
+		if port, err := strconv.Atoi(portStr); err == nil {
+			return port
+		}
+		// Return default if there's an error parsing the port
+		return defaultPort
+	}).(pulumi.IntOutput)
+}
+
+// CreateResourceRequirements creates consistent resource requirements for pods
+// Provides default values if any parameter is empty
+func CreateResourceRequirements(cpuLimit, memoryLimit, cpuRequest, memoryRequest string) *corev1.ResourceRequirementsArgs {
+	// Default values
+	if cpuLimit == "" {
+		cpuLimit = "2"
+	}
+	if memoryLimit == "" {
+		memoryLimit = "2Gi"
+	}
+	if cpuRequest == "" {
+		cpuRequest = "1"
+	}
+	if memoryRequest == "" {
+		memoryRequest = "1Gi"
+	}
+
+	return &corev1.ResourceRequirementsArgs{
+		Limits: pulumi.StringMap{
+			"cpu":    pulumi.String(cpuLimit),
+			"memory": pulumi.String(memoryLimit),
+		},
+		Requests: pulumi.StringMap{
+			"cpu":    pulumi.String(cpuRequest),
+			"memory": pulumi.String(memoryRequest),
+		},
+	}
+}
+
+// CreatePersistentVolumeClaim creates a PVC with consistent labeling and defaults
+func CreatePersistentVolumeClaim(
+	ctx *pulumi.Context,
+	name string,
+	namespace pulumi.StringInput,
+	storageSize pulumi.StringInput,
+	storageClass string,
+	labels pulumi.StringMap,
+	component pulumi.Resource,
+) (*corev1.PersistentVolumeClaim, error) {
+	if storageSize == nil {
+		storageSize = pulumi.String("150Gi") // Default storage size
+	}
+
+	if storageClass == "" {
+		storageClass = "aws-gp3" // Default storage class
+	}
+
+	if labels == nil {
+		labels = CreateResourceLabels(name, name, name, nil)
+	}
+
+	return corev1.NewPersistentVolumeClaim(ctx, name, &corev1.PersistentVolumeClaimArgs{
+		Metadata: &metav1.ObjectMetaArgs{
+			Name:      pulumi.String(name),
+			Labels:    labels,
+			Namespace: namespace,
+		},
+		Spec: &corev1.PersistentVolumeClaimSpecArgs{
+			AccessModes: pulumi.StringArray{pulumi.String("ReadWriteOnce")},
+			Resources: &corev1.VolumeResourceRequirementsArgs{
+				Requests: pulumi.StringMap{
+					"storage": storageSize,
+				},
+			},
+			StorageClassName: pulumi.String(storageClass),
+		},
+	}, pulumi.Parent(component))
 }
