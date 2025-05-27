@@ -27,6 +27,10 @@ import (
 //	    },
 //	})
 func NewQuinceyComponent(ctx *pulumi.Context, name string, args *QuinceyComponentArgs, opts ...pulumi.ResourceOption) (*QuinceyComponent, error) {
+	if err := args.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid quincey component args: %w", err)
+	}
+
 	component := &QuinceyComponent{
 		ResourceState: pulumi.ResourceState{},
 	}
