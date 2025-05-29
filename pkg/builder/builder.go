@@ -116,7 +116,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	// Create ConfigMap for environment variables
 	configMap, err := utils.CreateConfigMap(
 		ctx,
-		fmt.Sprintf("%s-env", args.Name),
+		fmt.Sprintf("%s-configmap", args.Name),
 		pulumi.String(args.Namespace),
 		pulumi.StringMap{
 			"app":                       pulumi.String(args.Name),
