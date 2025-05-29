@@ -2,7 +2,6 @@ package builder
 
 import (
 	"github.com/init4tech/signet-infra-components/pkg/utils"
-	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
 	corev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -28,8 +27,6 @@ type BuilderComponent struct {
 	Deployment           *appsv1.Deployment
 	Service              *corev1.Service
 	ServiceAccount       *corev1.ServiceAccount
-	IAMRole              *iam.Role
-	IAMPolicy            *iam.Policy
 	ConfigMap            *corev1.ConfigMap
 }
 
@@ -87,31 +84,6 @@ type BuilderEnv struct {
 func (e BuilderEnv) GetEnvMap() pulumi.StringMap {
 	// All fields are now StringInput, so we can use the standard reflection method
 	return utils.CreateEnvMap(e)
-}
-
-type IAMStatement struct {
-	Sid       string `json:"sid,omitempty"`
-	Effect    string `json:"effect"`
-	Principal struct {
-		Service []string `json:"Service"`
-	} `json:"Principal"`
-	Action []string `json:"Action"`
-}
-
-type IAMPolicy struct {
-	Version   string         `json:"Version"`
-	Statement []IAMStatement `json:"Statement"`
-}
-
-type KMSStatement struct {
-	Effect   string             `json:"Effect"`
-	Action   []string           `json:"Action"`
-	Resource pulumi.StringInput `json:"Resource"`
-}
-
-type KMSPolicy struct {
-	Version   string         `json:"Version"`
-	Statement []KMSStatement `json:"Statement"`
 }
 
 type Builder interface {
