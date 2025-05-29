@@ -2,7 +2,6 @@ package quincey
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/init4tech/signet-infra-components/pkg/utils"
 	crd "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apiextensions"
@@ -35,7 +34,7 @@ func NewQuinceyComponent(ctx *pulumi.Context, name string, args *QuinceyComponen
 		ResourceState: pulumi.ResourceState{},
 	}
 
-	if err := ctx.RegisterComponentResource("signet:index:Quincey", name, component); err != nil {
+	if err := ctx.RegisterComponentResource(ComponentKind, name, component); err != nil {
 		return nil, fmt.Errorf("failed to register component resource: %w", err)
 	}
 
@@ -94,7 +93,7 @@ func NewQuinceyComponent(ctx *pulumi.Context, name string, args *QuinceyComponen
 
 // createServiceAccount creates a Kubernetes service account for the Quincey service
 func createServiceAccount(ctx *pulumi.Context, namespace pulumi.StringInput, parent *QuinceyComponent) (*corev1.ServiceAccount, error) {
-	labels := utils.CreateResourceLabels(ComponentName, ServiceName, "signet", nil)
+	labels := utils.CreateResourceLabels(ComponentName, ServiceName, DefaultAppSelector, nil)
 
 	return corev1.NewServiceAccount(ctx, ServiceName, &corev1.ServiceAccountArgs{
 		Metadata: &metav1.ObjectMetaArgs{
@@ -107,12 +106,9 @@ func createServiceAccount(ctx *pulumi.Context, namespace pulumi.StringInput, par
 
 // createDeployment creates the Kubernetes deployment for the Quincey service
 func createDeployment(ctx *pulumi.Context, args *QuinceyComponentArgs, parent *QuinceyComponent) (*appsv1.Deployment, error) {
-	labels := utils.CreateResourceLabels(ComponentName, ServiceName, "signet", nil)
+	labels := utils.CreateResourceLabels(ComponentName, ServiceName, DefaultAppSelector, nil)
 
-	containerPortInt := args.Env.QuinceyPort.ToStringOutput().ApplyT(func(s string) int {
-		port, _ := strconv.Atoi(s)
-		return port
-	}).(pulumi.IntOutput)
+	containerPortInt := utils.ParsePortWithDefault(args.Env.QuinceyPort, DefaultQuinceyPort)
 
 	return appsv1.NewDeployment(ctx, ServiceName, &appsv1.DeploymentArgs{
 		Metadata: &metav1.ObjectMetaArgs{
@@ -124,7 +120,7 @@ func createDeployment(ctx *pulumi.Context, args *QuinceyComponentArgs, parent *Q
 			Selector: &metav1.LabelSelectorArgs{
 				MatchLabels: labels,
 			},
-			Replicas: pulumi.Int(1),
+			Replicas: pulumi.Int(DefaultReplicas),
 			Template: &corev1.PodTemplateSpecArgs{
 				Metadata: &metav1.ObjectMetaArgs{
 					Labels: labels,
@@ -142,7 +138,7 @@ func createDeployment(ctx *pulumi.Context, args *QuinceyComponentArgs, parent *Q
 
 // createConfigMap creates the ConfigMap for the Quincey service
 func createConfigMap(ctx *pulumi.Context, args *QuinceyComponentArgs, parent *QuinceyComponent) (*corev1.ConfigMap, error) {
-	labels := utils.CreateResourceLabels(ComponentName, ServiceName, "signet", nil)
+	labels := utils.CreateResourceLabels(ComponentName, ServiceName, DefaultAppSelector, nil)
 
 	return utils.CreateConfigMap(ctx, ServiceName, args.Namespace, labels, args.Env)
 }
@@ -164,16 +160,9 @@ func createContainer(args *QuinceyComponentArgs, port pulumi.IntOutput) *corev1.
 
 // createService creates the Kubernetes service for the Quincey service
 func createService(ctx *pulumi.Context, args *QuinceyComponentArgs, deployment *appsv1.Deployment, parent *QuinceyComponent) (*corev1.Service, error) {
-	labels := utils.CreateResourceLabels(ComponentName, ServiceName, "signet", nil)
+	labels := utils.CreateResourceLabels(ComponentName, ServiceName, DefaultAppSelector, nil)
 
-	containerPortInt := args.Env.QuinceyPort.ToStringOutput().ApplyT(func(s string) int {
-		port, err := strconv.Atoi(s)
-		if err != nil {
-			fmt.Printf("Error converting QuinceyPort to integer: %v. Using default port 8080.\n", err)
-			return 8080
-		}
-		return port
-	}).(pulumi.IntOutput)
+	containerPortInt := utils.ParsePortWithDefault(args.Env.QuinceyPort, DefaultQuinceyPort)
 
 	return corev1.NewService(ctx, "quincey-server-service", &corev1.ServiceArgs{
 		Metadata: &metav1.ObjectMetaArgs{
@@ -189,30 +178,23 @@ func createService(ctx *pulumi.Context, args *QuinceyComponentArgs, deployment *
 					TargetPort: containerPortInt,
 				},
 			},
-			Type: pulumi.String("ClusterIP"),
+			Type: pulumi.String(ServiceTypeClusterIP),
 		},
 	}, pulumi.DependsOn([]pulumi.Resource{deployment}), pulumi.Parent(parent))
 }
 
 // createVirtualService creates the Istio virtual service for the Quincey service
 func createVirtualService(ctx *pulumi.Context, args *QuinceyComponentArgs, service *corev1.Service, parent *QuinceyComponent) (*crd.CustomResource, error) {
-	labels := utils.CreateResourceLabels(ComponentName, ServiceName, "signet", nil)
+	labels := utils.CreateResourceLabels(ComponentName, ServiceName, DefaultAppSelector, nil)
 
-	containerPortInt := args.Env.QuinceyPort.ToStringOutput().ApplyT(func(s string) int {
-		port, err := strconv.Atoi(s)
-		if err != nil {
-			fmt.Printf("Error converting QuinceyPort to integer: %v. Using default port 8080.\n", err)
-			return 8080
-		}
-		return port
-	}).(pulumi.IntOutput)
+	containerPortInt := utils.ParsePortWithDefault(args.Env.QuinceyPort, DefaultQuinceyPort)
 
 	// Get the service URL using the existing method
 	serviceURL := parent.GetServiceURL()
 
 	return crd.NewCustomResource(ctx, "quincey-vservice", &crd.CustomResourceArgs{
-		ApiVersion: pulumi.String("networking.istio.io/v1alpha3"),
-		Kind:       pulumi.String("VirtualService"),
+		ApiVersion: pulumi.String(IstioNetworkingAPIVersion),
+		Kind:       pulumi.String(VirtualServiceKind),
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String("quincey"),
 			Namespace: args.Namespace,
@@ -257,11 +239,11 @@ func createVirtualService(ctx *pulumi.Context, args *QuinceyComponentArgs, servi
 
 // createRequestAuthentication creates the Istio request authentication policy
 func createRequestAuthentication(ctx *pulumi.Context, args *QuinceyComponentArgs, parent *QuinceyComponent) (*crd.CustomResource, error) {
-	labels := utils.CreateResourceLabels(ComponentName, ServiceName, "signet", nil)
+	labels := utils.CreateResourceLabels(ComponentName, ServiceName, DefaultAppSelector, nil)
 
 	return crd.NewCustomResource(ctx, "quincey-authorization-policy", &crd.CustomResourceArgs{
-		ApiVersion: pulumi.String("security.istio.io/v1beta1"),
-		Kind:       pulumi.String("RequestAuthentication"),
+		ApiVersion: pulumi.String(IstioSecurityAPIVersion),
+		Kind:       pulumi.String(RequestAuthenticationKind),
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String("quincey-jwt-policy"),
 			Namespace: args.Namespace,
@@ -291,11 +273,11 @@ func createRequestAuthentication(ctx *pulumi.Context, args *QuinceyComponentArgs
 
 // createAuthorizationPolicy creates the Istio authorization policy
 func createAuthorizationPolicy(ctx *pulumi.Context, parent *QuinceyComponent) (*crd.CustomResource, error) {
-	labels := utils.CreateResourceLabels(ComponentName, ServiceName, "signet", nil)
+	labels := utils.CreateResourceLabels(ComponentName, ServiceName, DefaultAppSelector, nil)
 
 	return crd.NewCustomResource(ctx, "quincey-authorization-policy", &crd.CustomResourceArgs{
-		ApiVersion: pulumi.String("security.istio.io/v1beta1"),
-		Kind:       pulumi.String("AuthorizationPolicy"),
+		ApiVersion: pulumi.String(IstioSecurityAPIVersion),
+		Kind:       pulumi.String(AuthorizationPolicyKind),
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String("quincey-jwt-auth-policy"),
 			Namespace: parent.Service.Metadata.Namespace(),

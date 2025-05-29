@@ -7,14 +7,6 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-const (
-	// Service ports
-	MetricsPort = 9000
-
-	// Deployment settings
-	DefaultReplicas = 1
-)
-
 // AppLabels represents the Kubernetes labels to be applied to the builder resources.
 type AppLabels struct {
 	Labels pulumi.StringMap
