@@ -133,35 +133,35 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 			Type:     pulumi.String("ClusterIP"),
 			Ports: corev1.ServicePortArray{
 				corev1.ServicePortArgs{
-					Port: pulumi.Int(30303),
+					Port: pulumi.Int(DiscoveryPort),
 					Name: pulumi.String("disc"),
 				},
 				corev1.ServicePortArgs{
-					Port: pulumi.Int(9001),
+					Port: pulumi.Int(MetricsPort),
 					Name: pulumi.String("metrics"),
 				},
 				corev1.ServicePortArgs{
-					Port: pulumi.Int(8545),
+					Port: pulumi.Int(RpcPort),
 					Name: pulumi.String("host-http"),
 				},
 				corev1.ServicePortArgs{
-					Port: pulumi.Int(8551),
+					Port: pulumi.Int(AuthRpcPort),
 					Name: pulumi.String("p2p"),
 				},
 				corev1.ServicePortArgs{
-					Port: pulumi.Int(8546),
+					Port: pulumi.Int(WsPort),
 					Name: pulumi.String("host-ws"),
 				},
 				corev1.ServicePortArgs{
-					Port: pulumi.Int(8547),
+					Port: pulumi.Int(HostIpcPort),
 					Name: pulumi.String("host-ipc"),
 				},
 				corev1.ServicePortArgs{
-					Port: pulumi.Int(8645),
+					Port: pulumi.Int(RollupHttpPort),
 					Name: pulumi.String("rollup-http"),
 				},
 				corev1.ServicePortArgs{
-					Port: pulumi.Int(8646),
+					Port: pulumi.Int(RollupWsPort),
 					Name: pulumi.String("rollup-ws"),
 				},
 			},

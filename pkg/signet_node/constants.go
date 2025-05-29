@@ -23,6 +23,9 @@ const (
 	DiscoveryPort        = 30303
 	ConsensusHttpPort    = 4000
 	ConsensusMetricsPort = 5054
+	HostIpcPort          = 8547
+	RollupHttpPort       = 8645
+	RollupWsPort         = 8646
 
 	// Component name
 	ComponentKind = "the-builder:index:SignetNode"
