@@ -44,29 +44,29 @@ type SignetNodeComponent struct {
 }
 
 type SignetNodeEnv struct {
-	HostZenithAddress             pulumi.StringInput `pulumi:"hostZenithAddress"`
-	RuOrdersContractAddress       pulumi.StringInput `pulumi:"ruOrdersContractAddress"`
-	HostOrdersContractAddress     pulumi.StringInput `pulumi:"hostOrdersContractAddress"`
-	SignetChainId                 pulumi.StringInput `pulumi:"signetChainId"`
-	BlobExplorerUrl               pulumi.StringInput `pulumi:"blobExplorerUrl"`
-	SignetStaticPath              pulumi.StringInput `pulumi:"signetStaticPath"`
-	SignetDatabasePath            pulumi.StringInput `pulumi:"signetDatabasePath"`
+	HostZenithAddress             pulumi.StringInput `pulumi:"hostZenithAddress" validate:"required"`
+	RuOrdersContractAddress       pulumi.StringInput `pulumi:"ruOrdersContractAddress" validate:"required"`
+	HostOrdersContractAddress     pulumi.StringInput `pulumi:"hostOrdersContractAddress" validate:"required"`
+	SignetChainId                 pulumi.StringInput `pulumi:"signetChainId" validate:"required"`
+	BlobExplorerUrl               pulumi.StringInput `pulumi:"blobExplorerUrl" validate:"required"`
+	SignetStaticPath              pulumi.StringInput `pulumi:"signetStaticPath" validate:"required"`
+	SignetDatabasePath            pulumi.StringInput `pulumi:"signetDatabasePath" validate:"required"`
 	RustLog                       pulumi.StringInput `pulumi:"rustLog"`
-	IpcEndpoint                   pulumi.StringInput `pulumi:"ipcEndpoint"`
-	RpcPort                       pulumi.StringInput `pulumi:"rpcPort"`
-	WsRpcPort                     pulumi.StringInput `pulumi:"wsRpcPort"`
-	TxForwardUrl                  pulumi.StringInput `pulumi:"txForwardUrl"`
-	GenesisJsonPath               pulumi.StringInput `pulumi:"genesisJsonPath"`
-	HostZenithDeployHeight        pulumi.StringInput `pulumi:"hostZenithDeployHeight"`
-	BaseFeeRecipient              pulumi.StringInput `pulumi:"baseFeeRecipient"`
-	HostPassageContractAddress    pulumi.StringInput `pulumi:"hostPassageContractAddress"`
-	HostTransactorContractAddress pulumi.StringInput `pulumi:"hostTransactorContractAddress"`
-	RuPassageContractAddress      pulumi.StringInput `pulumi:"ruPassageContractAddress"`
-	SignetClUrl                   pulumi.StringInput `pulumi:"signetClUrl"`
-	SignetPylonUrl                pulumi.StringInput `pulumi:"signetPylonUrl"`
-	HostStartTimestamp            pulumi.StringInput `pulumi:"hostStartTimestamp"`
-	HostSlotOffset                pulumi.StringInput `pulumi:"hostSlotOffset"`
-	HostSlotDuration              pulumi.StringInput `pulumi:"hostSlotDuration"`
+	IpcEndpoint                   pulumi.StringInput `pulumi:"ipcEndpoint" validate:"required"`
+	RpcPort                       pulumi.StringInput `pulumi:"rpcPort" validate:"required"`
+	WsRpcPort                     pulumi.StringInput `pulumi:"wsRpcPort" validate:"required"`
+	TxForwardUrl                  pulumi.StringInput `pulumi:"txForwardUrl" validate:"required"`
+	GenesisJsonPath               pulumi.StringInput `pulumi:"genesisJsonPath" validate:"required"`
+	HostZenithDeployHeight        pulumi.StringInput `pulumi:"hostZenithDeployHeight" validate:"required"`
+	BaseFeeRecipient              pulumi.StringInput `pulumi:"baseFeeRecipient" validate:"required"`
+	HostPassageContractAddress    pulumi.StringInput `pulumi:"hostPassageContractAddress" validate:"required"`
+	HostTransactorContractAddress pulumi.StringInput `pulumi:"hostTransactorContractAddress" validate:"required"`
+	RuPassageContractAddress      pulumi.StringInput `pulumi:"ruPassageContractAddress" validate:"required"`
+	SignetClUrl                   pulumi.StringInput `pulumi:"signetClUrl" validate:"required"`
+	SignetPylonUrl                pulumi.StringInput `pulumi:"signetPylonUrl" validate:"required"`
+	HostStartTimestamp            pulumi.StringInput `pulumi:"hostStartTimestamp" validate:"required"`
+	HostSlotOffset                pulumi.StringInput `pulumi:"hostSlotOffset" validate:"required"`
+	HostSlotDuration              pulumi.StringInput `pulumi:"hostSlotDuration" validate:"required"`
 }
 
 // GetEnvMap implements the utils.EnvProvider interface

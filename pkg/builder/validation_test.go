@@ -63,7 +63,7 @@ func TestBuilderComponentArgsValidate(t *testing.T) {
 		}
 		err := args.Validate()
 		assert.Error(t, err)
-		assert.Equal(t, "builder port is required", err.Error())
+		assert.Equal(t, "auth token refresh interval is required", err.Error())
 	})
 
 	// Test with valid args and minimal valid BuilderEnv
@@ -74,19 +74,33 @@ func TestBuilderComponentArgsValidate(t *testing.T) {
 			Image:     "test-image:latest",
 			AppLabels: AppLabels{Labels: pulumi.StringMap{"app": pulumi.String("test")}},
 			BuilderEnv: BuilderEnv{
-				BuilderPort:              pulumi.String("8080"),
+				AuthTokenRefreshInterval: pulumi.String("300"),
+				AwsAccountId:             pulumi.String("123456789012"),
+				AwsAccessKeyId:           pulumi.String("test-access-key"),
+				AwsRegion:                pulumi.String("us-west-2"),
+				AwsSecretAccessKey:       pulumi.String("test-secret-key"),
+				BlockConfirmationBuffer:  pulumi.String("10"),
+				BlockQueryCutoff:         pulumi.String("2000"),
+				BlockQueryStart:          pulumi.String("1000"),
+				BuilderHelperAddress:     pulumi.String("0x123456"),
 				BuilderKey:               pulumi.String("test-key"),
+				BuilderPort:              pulumi.String("8080"),
+				BuilderRewardsAddress:    pulumi.String("0x789abc"),
+				ChainOffset:              pulumi.String("10"),
+				ConcurrentLimit:          pulumi.String("100"),
+				HostChainId:              pulumi.String("1"),
 				HostRpcUrl:               pulumi.String("http://host-rpc"),
-				RollupRpcUrl:             pulumi.String("http://rollup-rpc"),
-				ZenithAddress:            pulumi.String("0x123456"),
-				QuinceyUrl:               pulumi.String("http://quincey"),
-				OtelExporterOtlpEndpoint: pulumi.String("http://otel"),
 				OauthAudience:            pulumi.String("audience"),
 				OauthAuthenticateUrl:     pulumi.String("http://auth"),
 				OAuthClientId:            pulumi.String("client-id"),
 				OauthClientSecret:        pulumi.String("secret"),
 				OauthIssuer:              pulumi.String("issuer"),
 				OauthTokenUrl:            pulumi.String("http://token"),
+				OtelExporterOtlpEndpoint: pulumi.String("http://otel"),
+				QuinceyUrl:               pulumi.String("http://quincey"),
+				RollupBlockGasLimit:      pulumi.String("30000000"),
+				RollupChainId:            pulumi.String("2"),
+				RollupRpcUrl:             pulumi.String("http://rollup-rpc"),
 				RustLog:                  pulumi.String("info"),
 				SlotOffset:               pulumi.String("10"),
 				StartTimestamp:           pulumi.String("123456789"),
@@ -95,29 +109,10 @@ func TestBuilderComponentArgsValidate(t *testing.T) {
 				TxBroadcastUrls:          pulumi.String("http://broadcast"),
 				TxPoolCacheDuration:      pulumi.String("60"),
 				TxPoolUrl:                pulumi.String("http://txpool"),
+				ZenithAddress:            pulumi.String("0xdef456"),
 			},
 		}
 		err := args.Validate()
 		assert.NoError(t, err)
-	})
-}
-
-func TestBuilderEnvValidate(t *testing.T) {
-	// Test just one case for BuilderEnv validation
-	t.Run("missing builder port", func(t *testing.T) {
-		env := BuilderEnv{}
-		err := env.Validate()
-		assert.Error(t, err)
-		assert.Equal(t, "builder port is required", err.Error())
-	})
-
-	// Test with just BuilderPort set
-	t.Run("missing builder key", func(t *testing.T) {
-		env := BuilderEnv{
-			BuilderPort: pulumi.String("8080"),
-		}
-		err := env.Validate()
-		assert.Error(t, err)
-		assert.Equal(t, "builder key is required", err.Error())
 	})
 }
