@@ -34,7 +34,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	component := &BuilderComponent{
 		BuilderComponentArgs: args,
 	}
-	err := ctx.RegisterComponentResource("the-builder:index:Builder", args.Name, component)
+	err := ctx.RegisterComponentResource("signet:index:Builder", args.Name, component)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register component resource: %w", err)
 	}
