@@ -4,7 +4,9 @@ package builder
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
+	"github.com/init4tech/signet-infra-components/pkg/utils"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	crd "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apiextensions"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
@@ -12,6 +14,18 @@ import (
 	metav1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/meta/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
+
+// parseBuilderPort converts a port string to an integer with a default fallback
+func parseBuilderPort(portStr pulumi.StringInput) pulumi.IntOutput {
+	return pulumi.All(portStr).ApplyT(func(inputs []interface{}) int {
+		portStr := inputs[0].(string)
+		if port, err := strconv.Atoi(portStr); err == nil {
+			return port
+		}
+		// Default to 8080 if there's an error parsing the port
+		return 8080
+	}).(pulumi.IntOutput)
+}
 
 // NewBuilder creates a new builder component with the given configuration.
 func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.ResourceOption) (*BuilderComponent, error) {
@@ -99,6 +113,23 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 		return nil, fmt.Errorf("failed to attach policy to role: %w", err)
 	}
 
+	// Create ConfigMap for environment variables
+	configMap, err := utils.CreateConfigMap(
+		ctx,
+		fmt.Sprintf("%s-configmap", args.Name),
+		pulumi.String(args.Namespace),
+		pulumi.StringMap{
+			"app":                       pulumi.String(args.Name),
+			"app.kubernetes.io/name":    pulumi.String(args.Name),
+			"app.kubernetes.io/part-of": pulumi.String(args.Name),
+		},
+		args.BuilderEnv,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create environment ConfigMap: %w", err)
+	}
+	component.ConfigMap = configMap
+
 	// Create deployment
 	deployment, err := appsv1.NewDeployment(ctx, fmt.Sprintf("%s-deployment", args.Name), &appsv1.DeploymentArgs{
 		Metadata: &metav1.ObjectMetaArgs{
@@ -120,10 +151,16 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 						&corev1.ContainerArgs{
 							Name:  pulumi.String(args.Name),
 							Image: pulumi.String(args.Image),
-							Env:   createEnvVars(args.BuilderEnv),
+							EnvFrom: corev1.EnvFromSourceArray{
+								&corev1.EnvFromSourceArgs{
+									ConfigMapRef: &corev1.ConfigMapEnvSourceArgs{
+										Name: component.ConfigMap.Metadata.Name(),
+									},
+								},
+							},
 							Ports: corev1.ContainerPortArray{
 								&corev1.ContainerPortArgs{
-									ContainerPort: args.BuilderEnv.BuilderPort,
+									ContainerPort: parseBuilderPort(args.BuilderEnv.BuilderPort),
 								},
 								&corev1.ContainerPortArgs{
 									ContainerPort: pulumi.Int(MetricsPort),
@@ -142,7 +179,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 							LivenessProbe: &corev1.ProbeArgs{
 								HttpGet: &corev1.HTTPGetActionArgs{
 									Path: pulumi.String("/healthcheck"),
-									Port: args.BuilderEnv.BuilderPort,
+									Port: parseBuilderPort(args.BuilderEnv.BuilderPort),
 								},
 								InitialDelaySeconds: pulumi.Int(5),
 								PeriodSeconds:       pulumi.Int(1),
@@ -152,7 +189,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 							ReadinessProbe: &corev1.ProbeArgs{
 								HttpGet: &corev1.HTTPGetActionArgs{
 									Path: pulumi.String("/healthcheck"),
-									Port: args.BuilderEnv.BuilderPort,
+									Port: parseBuilderPort(args.BuilderEnv.BuilderPort),
 								},
 								InitialDelaySeconds: pulumi.Int(5),
 								PeriodSeconds:       pulumi.Int(10),
@@ -183,8 +220,8 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 			Selector: args.AppLabels.Labels,
 			Ports: corev1.ServicePortArray{
 				&corev1.ServicePortArgs{
-					Port:       args.BuilderEnv.BuilderPort,
-					TargetPort: args.BuilderEnv.BuilderPort,
+					Port:       parseBuilderPort(args.BuilderEnv.BuilderPort),
+					TargetPort: parseBuilderPort(args.BuilderEnv.BuilderPort),
 					Name:       pulumi.String("http"),
 				},
 				&corev1.ServicePortArgs{

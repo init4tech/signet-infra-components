@@ -1,6 +1,7 @@
 package signet_node
 
 import (
+	"github.com/init4tech/signet-infra-components/pkg/utils"
 	crd "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apiextensions"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
 	corev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -66,6 +67,12 @@ type SignetNodeEnv struct {
 	HostStartTimestamp            pulumi.StringInput `pulumi:"hostStartTimepstamp"`
 	HostSlotOffset                pulumi.StringInput `pulumi:"hostSlotOffset"`
 	HostSlotDuration              pulumi.StringInput `pulumi:"hostSlotDuration"`
+}
+
+// GetEnvMap implements the utils.EnvProvider interface
+// It creates a map of environment variables from the SignetNodeEnv struct
+func (e SignetNodeEnv) GetEnvMap() pulumi.StringMap {
+	return utils.CreateEnvMap(e)
 }
 
 // SignetNode interface defines methods that the SignetNodeComponent must implement
