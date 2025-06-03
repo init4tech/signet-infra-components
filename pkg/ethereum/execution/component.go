@@ -16,191 +16,185 @@ func NewExecutionClient(ctx *pulumi.Context, args *ExecutionClientArgs, opts ...
 		return nil, fmt.Errorf("invalid execution client args: %w", err)
 	}
 
-	component := &ExecutionClientComponent{
-		Name:      args.Name,
-		Namespace: args.Namespace,
-	}
+	component := &ExecutionClientComponent{}
 
-	err := ctx.RegisterComponentResource("ethereum:index:ExecutionClient", args.Name, component, opts...)
+	var name string
+	pulumi.All(args.Name).ApplyT(func(values []interface{}) error {
+		name = values[0].(string)
+		return nil
+	})
+
+	err := ctx.RegisterComponentResource("signet:index:ExecutionClient", name, component)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register component resource: %w", err)
 	}
 
 	// Create PVC for data storage
-	pvcName := fmt.Sprintf("%s-data", args.Name)
-	pvc, err := utils.CreatePersistentVolumeClaim(
-		ctx,
-		pvcName,
-		pulumi.String(args.Namespace),
-		pulumi.String(args.StorageSize),
-		args.StorageClass,
-		utils.CreateResourceLabels(args.Name, pvcName, args.Name, nil),
-		component,
-	)
+	pvcName := fmt.Sprintf("%s-data", name)
+	component.PVC, err = corev1.NewPersistentVolumeClaim(ctx, pvcName, &corev1.PersistentVolumeClaimArgs{
+		Metadata: &metav1.ObjectMetaArgs{
+			Name:      pulumi.String(pvcName),
+			Namespace: args.Namespace,
+			Labels:    utils.CreateResourceLabels(name, pvcName, name, nil),
+		},
+		Spec: &corev1.PersistentVolumeClaimSpecArgs{
+			AccessModes: pulumi.StringArray{
+				pulumi.String("ReadWriteOnce"),
+			},
+			Resources: &corev1.VolumeResourceRequirementsArgs{
+				Requests: pulumi.StringMap{
+					"storage": args.StorageSize,
+				},
+			},
+			StorageClassName: args.StorageClass,
+		},
+	}, pulumi.Parent(component))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create pvc: %w", err)
+		return nil, fmt.Errorf("failed to create PVC: %w", err)
 	}
-	component.PVC = pvc
 
 	// Create JWT secret
-	jwtSecretName := fmt.Sprintf("%s-jwt", args.Name)
-	jwtSecret, err := corev1.NewSecret(ctx, jwtSecretName, &corev1.SecretArgs{
+	jwtSecretName := fmt.Sprintf("%s-jwt", name)
+	component.JWTSecret, err = corev1.NewSecret(ctx, jwtSecretName, &corev1.SecretArgs{
 		StringData: pulumi.StringMap{
-			"jwt.hex": pulumi.String(args.JWTSecret),
+			"jwt.hex": args.JWTSecret,
 		},
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(jwtSecretName),
-			Namespace: pulumi.String(args.Namespace),
-			Labels:    utils.CreateResourceLabels(args.Name, jwtSecretName, args.Name, nil),
+			Namespace: args.Namespace,
+			Labels:    utils.CreateResourceLabels(name, jwtSecretName, name, nil),
 		},
 	}, pulumi.Parent(component))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create jwt secret: %w", err)
+		return nil, fmt.Errorf("failed to create JWT secret: %w", err)
 	}
-	component.JWTSecret = jwtSecret
 
 	// Create P2P service
-	p2pServiceName := fmt.Sprintf("%s-p2p", args.Name)
-	p2pService, err := corev1.NewService(ctx, p2pServiceName, &corev1.ServiceArgs{
+	p2pServiceName := fmt.Sprintf("%s-p2p", name)
+	component.P2PService, err = corev1.NewService(ctx, p2pServiceName, &corev1.ServiceArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(p2pServiceName),
-			Namespace: pulumi.String(args.Namespace),
-			Labels:    utils.CreateResourceLabels(args.Name, p2pServiceName, args.Name, nil),
+			Namespace: args.Namespace,
+			Labels:    utils.CreateResourceLabels(name, p2pServiceName, name, nil),
 		},
 		Spec: &corev1.ServiceSpecArgs{
 			Selector: pulumi.StringMap{
-				"app": pulumi.String(args.Name),
+				"app": pulumi.String(name),
 			},
 			Ports: corev1.ServicePortArray{
 				corev1.ServicePortArgs{
-					Port:     pulumi.Int(args.P2PPort),
-					Name:     pulumi.String("p2p-tcp"),
-					Protocol: pulumi.String("TCP"),
+					Name:       pulumi.String("p2p"),
+					Port:       args.P2PPort,
+					TargetPort: args.P2PPort,
+					Protocol:   pulumi.String("TCP"),
 				},
 				corev1.ServicePortArgs{
-					Port:     pulumi.Int(args.P2PPort),
-					Name:     pulumi.String("p2p-udp"),
-					Protocol: pulumi.String("UDP"),
+					Name:       pulumi.String("discovery"),
+					Port:       args.DiscoveryPort,
+					TargetPort: args.DiscoveryPort,
+					Protocol:   pulumi.String("UDP"),
 				},
 			},
-			Type: pulumi.String("NodePort"),
 		},
 	}, pulumi.Parent(component))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create p2p service: %w", err)
+		return nil, fmt.Errorf("failed to create P2P service: %w", err)
 	}
-	component.P2PService = p2pService
 
 	// Create RPC service
-	rpcServiceName := fmt.Sprintf("%s-rpc", args.Name)
-	rpcService, err := corev1.NewService(ctx, rpcServiceName, &corev1.ServiceArgs{
+	rpcServiceName := fmt.Sprintf("%s-rpc", name)
+	component.RPCService, err = corev1.NewService(ctx, rpcServiceName, &corev1.ServiceArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(rpcServiceName),
-			Namespace: pulumi.String(args.Namespace),
-			Labels:    utils.CreateResourceLabels(args.Name, rpcServiceName, args.Name, nil),
+			Namespace: args.Namespace,
+			Labels:    utils.CreateResourceLabels(name, rpcServiceName, name, nil),
 		},
 		Spec: &corev1.ServiceSpecArgs{
 			Selector: pulumi.StringMap{
-				"app": pulumi.String(args.Name),
+				"app": pulumi.String(name),
 			},
 			Ports: corev1.ServicePortArray{
 				corev1.ServicePortArgs{
-					Port:     pulumi.Int(args.RPCPort),
-					Name:     pulumi.String("rpc"),
-					Protocol: pulumi.String("TCP"),
+					Name:       pulumi.String("rpc"),
+					Port:       args.RPCPort,
+					TargetPort: args.RPCPort,
 				},
 				corev1.ServicePortArgs{
-					Port:     pulumi.Int(args.WSPort),
-					Name:     pulumi.String("ws"),
-					Protocol: pulumi.String("TCP"),
+					Name:       pulumi.String("ws"),
+					Port:       args.WSPort,
+					TargetPort: args.WSPort,
 				},
 				corev1.ServicePortArgs{
-					Port:     pulumi.Int(args.MetricsPort),
-					Name:     pulumi.String("metrics"),
-					Protocol: pulumi.String("TCP"),
+					Name:       pulumi.String("metrics"),
+					Port:       args.MetricsPort,
+					TargetPort: args.MetricsPort,
 				},
 				corev1.ServicePortArgs{
-					Port:     pulumi.Int(args.AuthRPCPort),
-					Name:     pulumi.String("auth-rpc"),
-					Protocol: pulumi.String("TCP"),
+					Name:       pulumi.String("auth-rpc"),
+					Port:       args.AuthRPCPort,
+					TargetPort: args.AuthRPCPort,
 				},
 			},
-			Type: pulumi.String("ClusterIP"),
 		},
 	}, pulumi.Parent(component))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create rpc service: %w", err)
+		return nil, fmt.Errorf("failed to create RPC service: %w", err)
 	}
-	component.RPCService = rpcService
 
 	// Create StatefulSet
-	statefulSetName := fmt.Sprintf("%s-set", args.Name)
-	statefulSet, err := appsv1.NewStatefulSet(ctx, statefulSetName, &appsv1.StatefulSetArgs{
+	statefulSetName := name
+	component.StatefulSet, err = appsv1.NewStatefulSet(ctx, statefulSetName, &appsv1.StatefulSetArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(statefulSetName),
-			Namespace: pulumi.String(args.Namespace),
-			Labels:    utils.CreateResourceLabels(args.Name, statefulSetName, args.Name, nil),
+			Namespace: args.Namespace,
+			Labels:    utils.CreateResourceLabels(name, statefulSetName, name, nil),
 		},
 		Spec: &appsv1.StatefulSetSpecArgs{
 			Replicas: pulumi.Int(1),
 			Selector: &metav1.LabelSelectorArgs{
 				MatchLabels: pulumi.StringMap{
-					"app": pulumi.String(args.Name),
+					"app": pulumi.String(name),
 				},
 			},
 			Template: &corev1.PodTemplateSpecArgs{
 				Metadata: &metav1.ObjectMetaArgs{
-					Labels: utils.CreateResourceLabels(args.Name, statefulSetName, args.Name, pulumi.StringMap{
-						"app": pulumi.String(args.Name),
-					}),
+					Labels: pulumi.StringMap{
+						"app": pulumi.String(name),
+					},
 				},
 				Spec: &corev1.PodSpecArgs{
 					Containers: corev1.ContainerArray{
 						corev1.ContainerArgs{
-							Name:            pulumi.String(args.Name),
-							Image:           pulumi.String(args.Image),
-							ImagePullPolicy: pulumi.String(args.ImagePullPolicy),
-							Resources: &corev1.ResourceRequirementsArgs{
-								Limits: pulumi.StringMap{
-									"cpu":    pulumi.String("2"),
-									"memory": pulumi.String("2Gi"),
-								},
-								Requests: pulumi.StringMap{
-									"cpu":    pulumi.String("1"),
-									"memory": pulumi.String("1Gi"),
-								},
-							},
-							Command: createExecutionClientCommand(args),
+							Name:            pulumi.String("execution"),
+							Image:           args.Image,
+							ImagePullPolicy: args.ImagePullPolicy,
+							Command:         createExecutionClientCommand(args),
 							Ports: corev1.ContainerPortArray{
 								corev1.ContainerPortArgs{
-									Name:          pulumi.String("p2p-tcp"),
-									ContainerPort: pulumi.Int(args.P2PPort),
+									Name:          pulumi.String("p2p"),
+									ContainerPort: args.P2PPort,
 									Protocol:      pulumi.String("TCP"),
 								},
 								corev1.ContainerPortArgs{
-									Name:          pulumi.String("p2p-udp"),
-									ContainerPort: pulumi.Int(args.P2PPort),
+									Name:          pulumi.String("discovery"),
+									ContainerPort: args.DiscoveryPort,
 									Protocol:      pulumi.String("UDP"),
 								},
 								corev1.ContainerPortArgs{
 									Name:          pulumi.String("rpc"),
-									ContainerPort: pulumi.Int(args.RPCPort),
-									Protocol:      pulumi.String("TCP"),
+									ContainerPort: args.RPCPort,
 								},
 								corev1.ContainerPortArgs{
 									Name:          pulumi.String("ws"),
-									ContainerPort: pulumi.Int(args.WSPort),
-									Protocol:      pulumi.String("TCP"),
+									ContainerPort: args.WSPort,
 								},
 								corev1.ContainerPortArgs{
 									Name:          pulumi.String("metrics"),
-									ContainerPort: pulumi.Int(args.MetricsPort),
-									Protocol:      pulumi.String("TCP"),
+									ContainerPort: args.MetricsPort,
 								},
 								corev1.ContainerPortArgs{
 									Name:          pulumi.String("auth-rpc"),
-									ContainerPort: pulumi.Int(args.AuthRPCPort),
-									Protocol:      pulumi.String("TCP"),
+									ContainerPort: args.AuthRPCPort,
 								},
 							},
 							VolumeMounts: corev1.VolumeMountArray{
@@ -210,10 +204,10 @@ func NewExecutionClient(ctx *pulumi.Context, args *ExecutionClientArgs, opts ...
 								},
 								corev1.VolumeMountArgs{
 									Name:      pulumi.String("jwt"),
-									MountPath: pulumi.String("/etc/execution/jwt"),
-									ReadOnly:  pulumi.Bool(true),
+									MountPath: pulumi.String("/jwt"),
 								},
 							},
+							Resources: nil,
 						},
 					},
 					Volumes: corev1.VolumeArray{
@@ -230,24 +224,15 @@ func NewExecutionClient(ctx *pulumi.Context, args *ExecutionClientArgs, opts ...
 							},
 						},
 					},
-					NodeSelector: pulumi.StringMap{
-						"kubernetes.io/os": pulumi.String("linux"),
-					},
-					Tolerations: corev1.TolerationArray{
-						corev1.TolerationArgs{
-							Key:      pulumi.String("node-role.kubernetes.io/control-plane"),
-							Operator: pulumi.String("Exists"),
-							Effect:   pulumi.String("NoSchedule"),
-						},
-					},
+					NodeSelector: args.NodeSelector,
+					Tolerations:  args.Tolerations,
 				},
 			},
 		},
 	}, pulumi.Parent(component))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create statefulset: %w", err)
+		return nil, fmt.Errorf("failed to create StatefulSet: %w", err)
 	}
-	component.StatefulSet = statefulSet
 
 	return component, nil
 }
@@ -281,7 +266,7 @@ func createExecutionClientCommand(args *ExecutionClientArgs) pulumi.StringArray 
 
 	// Add additional args if provided
 	for _, arg := range args.AdditionalArgs {
-		cmd = append(cmd, pulumi.String(arg))
+		cmd = append(cmd, arg)
 	}
 
 	return cmd

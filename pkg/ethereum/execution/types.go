@@ -9,41 +9,41 @@ import (
 // ExecutionClientArgs contains the configuration for an execution client
 type ExecutionClientArgs struct {
 	// Name is the base name for all resources
-	Name string `pulumi:"name"`
+	Name pulumi.StringInput `pulumi:"name"`
 	// Namespace is the Kubernetes namespace to deploy resources in
-	Namespace string `pulumi:"namespace"`
+	Namespace pulumi.StringInput `pulumi:"namespace"`
 	// StorageSize is the size of the persistent volume claim
-	StorageSize string `pulumi:"storageSize"`
+	StorageSize pulumi.StringInput `pulumi:"storageSize"`
 	// StorageClass is the Kubernetes storage class to use
-	StorageClass string `pulumi:"storageClass"`
+	StorageClass pulumi.StringInput `pulumi:"storageClass"`
 	// Image is the container image to use
-	Image string `pulumi:"image"`
+	Image pulumi.StringInput `pulumi:"image"`
 	// ImagePullPolicy is the Kubernetes image pull policy
-	ImagePullPolicy string `pulumi:"imagePullPolicy"`
+	ImagePullPolicy pulumi.StringInput `pulumi:"imagePullPolicy"`
 	// Resources contains the resource requests and limits
 	Resources *corev1.ResourceRequirements `pulumi:"resources,optional"`
 	// NodeSelector is the Kubernetes node selector
-	NodeSelector map[string]string `pulumi:"nodeSelector,optional"`
+	NodeSelector pulumi.StringMap `pulumi:"nodeSelector,optional"`
 	// Tolerations are the Kubernetes tolerations
-	Tolerations []corev1.Toleration `pulumi:"tolerations,optional"`
+	Tolerations corev1.TolerationArray `pulumi:"tolerations,optional"`
 	// JWTSecret is the JWT secret for authentication
-	JWTSecret string `pulumi:"jwtSecret"`
+	JWTSecret pulumi.StringInput `pulumi:"jwtSecret"`
 	// P2PPort is the port for P2P communication
-	P2PPort int `pulumi:"p2pPort"`
+	P2PPort pulumi.IntInput `pulumi:"p2pPort"`
 	// RPCPort is the port for RPC communication
-	RPCPort int `pulumi:"rpcPort"`
+	RPCPort pulumi.IntInput `pulumi:"rpcPort"`
 	// WSPort is the port for WebSocket communication
-	WSPort int `pulumi:"wsPort"`
+	WSPort pulumi.IntInput `pulumi:"wsPort"`
 	// MetricsPort is the port for metrics
-	MetricsPort int `pulumi:"metricsPort"`
+	MetricsPort pulumi.IntInput `pulumi:"metricsPort"`
 	// AuthRPCPort is the port for authenticated RPC
-	AuthRPCPort int `pulumi:"authRpcPort"`
+	AuthRPCPort pulumi.IntInput `pulumi:"authRpcPort"`
 	// DiscoveryPort is the port for node discovery
-	DiscoveryPort int `pulumi:"discoveryPort"`
+	DiscoveryPort pulumi.IntInput `pulumi:"discoveryPort"`
 	// Bootnodes is a list of bootnode URLs
-	Bootnodes []string `pulumi:"bootnodes,optional"`
+	Bootnodes pulumi.StringArray `pulumi:"bootnodes,optional"`
 	// AdditionalArgs are additional command line arguments
-	AdditionalArgs []string `pulumi:"additionalArgs,optional"`
+	AdditionalArgs pulumi.StringArray `pulumi:"additionalArgs,optional"`
 }
 
 // ExecutionClientComponent represents an execution client deployment
