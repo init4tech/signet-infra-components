@@ -64,7 +64,7 @@ type SignetNodeEnv struct {
 	RuPassageContractAddress      pulumi.StringInput `pulumi:"ruPassageContractAddress"`
 	SignetClUrl                   pulumi.StringInput `pulumi:"signetClUrl"`
 	SignetPylonUrl                pulumi.StringInput `pulumi:"signetPylonUrl"`
-	HostStartTimestamp            pulumi.StringInput `pulumi:"hostStartTimepstamp"`
+	HostStartTimestamp            pulumi.StringInput `pulumi:"hostStartTimestamp"`
 	HostSlotOffset                pulumi.StringInput `pulumi:"hostSlotOffset"`
 	HostSlotDuration              pulumi.StringInput `pulumi:"hostSlotDuration"`
 }
