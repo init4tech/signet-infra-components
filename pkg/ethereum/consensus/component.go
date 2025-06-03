@@ -16,154 +16,156 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 		return nil, fmt.Errorf("invalid consensus client args: %w", err)
 	}
 
-	component := &ConsensusClientComponent{
-		Name:      args.Name,
-		Namespace: args.Namespace,
-	}
+	component := &ConsensusClientComponent{}
 
-	err := ctx.RegisterComponentResource("ethereum:index:ConsensusClient", args.Name, component, opts...)
+	var name string
+	pulumi.All(args.Name).ApplyT(func(values []interface{}) error {
+		name = values[0].(string)
+		return nil
+	})
+
+	err := ctx.RegisterComponentResource("signet:consensus:ConsensusClient", name, component)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register component resource: %w", err)
 	}
 
 	// Create PVC for data storage
-	pvcName := fmt.Sprintf("%s-data", args.Name)
-	pvc, err := utils.CreatePersistentVolumeClaim(
-		ctx,
-		pvcName,
-		pulumi.String(args.Namespace),
-		pulumi.String(args.StorageSize),
-		args.StorageClass,
-		utils.CreateResourceLabels(args.Name, pvcName, args.Name, nil),
-		component,
-	)
+	pvcName := fmt.Sprintf("%s-data", name)
+	component.PVC, err = corev1.NewPersistentVolumeClaim(ctx, pvcName, &corev1.PersistentVolumeClaimArgs{
+		Metadata: &metav1.ObjectMetaArgs{
+			Name:      pulumi.String(pvcName),
+			Namespace: args.Namespace,
+			Labels:    utils.CreateResourceLabels(name, pvcName, name, nil),
+		},
+		Spec: &corev1.PersistentVolumeClaimSpecArgs{
+			AccessModes: pulumi.StringArray{
+				pulumi.String("ReadWriteOnce"),
+			},
+			Resources: &corev1.VolumeResourceRequirementsArgs{
+				Requests: pulumi.StringMap{
+					"storage": args.StorageSize,
+				},
+			},
+			StorageClassName: args.StorageClass,
+		},
+	}, pulumi.Parent(component))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create pvc: %w", err)
+		return nil, fmt.Errorf("failed to create PVC: %w", err)
 	}
-	component.PVC = pvc
+
+	// Create JWT secret
+	jwtSecretName := fmt.Sprintf("%s-jwt", name)
+	component.JWTSecret, err = corev1.NewSecret(ctx, jwtSecretName, &corev1.SecretArgs{
+		StringData: pulumi.StringMap{
+			"jwt.hex": args.JWTSecret,
+		},
+		Metadata: &metav1.ObjectMetaArgs{
+			Name:      pulumi.String(jwtSecretName),
+			Namespace: args.Namespace,
+			Labels:    utils.CreateResourceLabels(name, jwtSecretName, name, nil),
+		},
+	}, pulumi.Parent(component))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create JWT secret: %w", err)
+	}
 
 	// Create P2P service
-	p2pServiceName := fmt.Sprintf("%s-p2p", args.Name)
-	p2pService, err := corev1.NewService(ctx, p2pServiceName, &corev1.ServiceArgs{
+	p2pServiceName := fmt.Sprintf("%s-p2p", name)
+	component.P2PService, err = corev1.NewService(ctx, p2pServiceName, &corev1.ServiceArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(p2pServiceName),
-			Namespace: pulumi.String(args.Namespace),
-			Labels:    utils.CreateResourceLabels(args.Name, p2pServiceName, args.Name, nil),
+			Namespace: args.Namespace,
+			Labels:    utils.CreateResourceLabels(name, p2pServiceName, name, nil),
 		},
 		Spec: &corev1.ServiceSpecArgs{
 			Selector: pulumi.StringMap{
-				"app": pulumi.String(args.Name),
+				"app": pulumi.String(name),
 			},
 			Ports: corev1.ServicePortArray{
 				corev1.ServicePortArgs{
-					Port:     pulumi.Int(args.P2PPort),
-					Name:     pulumi.String("p2p-tcp"),
-					Protocol: pulumi.String("TCP"),
-				},
-				corev1.ServicePortArgs{
-					Port:     pulumi.Int(args.P2PPort),
-					Name:     pulumi.String("p2p-udp"),
-					Protocol: pulumi.String("UDP"),
+					Name:       pulumi.String("p2p"),
+					Port:       args.P2PPort,
+					TargetPort: args.P2PPort,
+					Protocol:   pulumi.String("TCP"),
 				},
 			},
-			Type: pulumi.String("NodePort"),
 		},
 	}, pulumi.Parent(component))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create p2p service: %w", err)
+		return nil, fmt.Errorf("failed to create P2P service: %w", err)
 	}
-	component.P2PService = p2pService
 
 	// Create Beacon API service
-	beaconAPIServiceName := fmt.Sprintf("%s-beacon-api", args.Name)
-	beaconAPIService, err := corev1.NewService(ctx, beaconAPIServiceName, &corev1.ServiceArgs{
+	beaconAPIServiceName := fmt.Sprintf("%s-beacon-api", name)
+	component.BeaconAPIService, err = corev1.NewService(ctx, beaconAPIServiceName, &corev1.ServiceArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(beaconAPIServiceName),
-			Namespace: pulumi.String(args.Namespace),
-			Labels:    utils.CreateResourceLabels(args.Name, beaconAPIServiceName, args.Name, nil),
+			Namespace: args.Namespace,
+			Labels:    utils.CreateResourceLabels(name, beaconAPIServiceName, name, nil),
 		},
 		Spec: &corev1.ServiceSpecArgs{
 			Selector: pulumi.StringMap{
-				"app": pulumi.String(args.Name),
+				"app": pulumi.String(name),
 			},
 			Ports: corev1.ServicePortArray{
 				corev1.ServicePortArgs{
-					Port:     pulumi.Int(args.BeaconAPIPort),
-					Name:     pulumi.String("beacon-api"),
-					Protocol: pulumi.String("TCP"),
+					Name:       pulumi.String("beacon-api"),
+					Port:       args.BeaconAPIPort,
+					TargetPort: args.BeaconAPIPort,
 				},
 				corev1.ServicePortArgs{
-					Port:     pulumi.Int(args.MetricsPort),
-					Name:     pulumi.String("metrics"),
-					Protocol: pulumi.String("TCP"),
+					Name:       pulumi.String("metrics"),
+					Port:       args.MetricsPort,
+					TargetPort: args.MetricsPort,
 				},
 			},
-			Type: pulumi.String("ClusterIP"),
 		},
 	}, pulumi.Parent(component))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create beacon api service: %w", err)
+		return nil, fmt.Errorf("failed to create Beacon API service: %w", err)
 	}
-	component.BeaconAPIService = beaconAPIService
 
 	// Create StatefulSet
-	statefulSetName := fmt.Sprintf("%s-set", args.Name)
-	statefulSet, err := appsv1.NewStatefulSet(ctx, statefulSetName, &appsv1.StatefulSetArgs{
+	statefulSetName := name
+	component.StatefulSet, err = appsv1.NewStatefulSet(ctx, statefulSetName, &appsv1.StatefulSetArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(statefulSetName),
-			Namespace: pulumi.String(args.Namespace),
-			Labels:    utils.CreateResourceLabels(args.Name, statefulSetName, args.Name, nil),
+			Namespace: args.Namespace,
+			Labels:    utils.CreateResourceLabels(name, statefulSetName, name, nil),
 		},
 		Spec: &appsv1.StatefulSetSpecArgs{
 			Replicas: pulumi.Int(1),
 			Selector: &metav1.LabelSelectorArgs{
 				MatchLabels: pulumi.StringMap{
-					"app": pulumi.String(args.Name),
+					"app": pulumi.String(name),
 				},
 			},
 			Template: &corev1.PodTemplateSpecArgs{
 				Metadata: &metav1.ObjectMetaArgs{
-					Labels: utils.CreateResourceLabels(args.Name, statefulSetName, args.Name, pulumi.StringMap{
-						"app": pulumi.String(args.Name),
-					}),
+					Labels: pulumi.StringMap{
+						"app": pulumi.String(name),
+					},
 				},
 				Spec: &corev1.PodSpecArgs{
 					Containers: corev1.ContainerArray{
 						corev1.ContainerArgs{
-							Name:            pulumi.String(args.Name),
-							Image:           pulumi.String(args.Image),
-							ImagePullPolicy: pulumi.String(args.ImagePullPolicy),
-							Resources: &corev1.ResourceRequirementsArgs{
-								Limits: pulumi.StringMap{
-									"cpu":    pulumi.String("4"),
-									"memory": pulumi.String("8Gi"),
-								},
-								Requests: pulumi.StringMap{
-									"cpu":    pulumi.String("2"),
-									"memory": pulumi.String("4Gi"),
-								},
-							},
-							Command: createConsensusClientCommand(args),
+							Name:            pulumi.String("consensus"),
+							Image:           args.Image,
+							ImagePullPolicy: args.ImagePullPolicy,
+							Command:         createConsensusClientCommand(args),
 							Ports: corev1.ContainerPortArray{
 								corev1.ContainerPortArgs{
-									Name:          pulumi.String("p2p-tcp"),
-									ContainerPort: pulumi.Int(args.P2PPort),
+									Name:          pulumi.String("p2p"),
+									ContainerPort: args.P2PPort,
 									Protocol:      pulumi.String("TCP"),
-								},
-								corev1.ContainerPortArgs{
-									Name:          pulumi.String("p2p-udp"),
-									ContainerPort: pulumi.Int(args.P2PPort),
-									Protocol:      pulumi.String("UDP"),
 								},
 								corev1.ContainerPortArgs{
 									Name:          pulumi.String("beacon-api"),
-									ContainerPort: pulumi.Int(args.BeaconAPIPort),
-									Protocol:      pulumi.String("TCP"),
+									ContainerPort: args.BeaconAPIPort,
 								},
 								corev1.ContainerPortArgs{
 									Name:          pulumi.String("metrics"),
-									ContainerPort: pulumi.Int(args.MetricsPort),
-									Protocol:      pulumi.String("TCP"),
+									ContainerPort: args.MetricsPort,
 								},
 							},
 							VolumeMounts: corev1.VolumeMountArray{
@@ -171,7 +173,12 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 									Name:      pulumi.String("data"),
 									MountPath: pulumi.String("/data"),
 								},
+								corev1.VolumeMountArgs{
+									Name:      pulumi.String("jwt"),
+									MountPath: pulumi.String("/etc/execution/jwt"),
+								},
 							},
+							Resources: nil,
 						},
 					},
 					Volumes: corev1.VolumeArray{
@@ -181,26 +188,25 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 								ClaimName: pulumi.String(pvcName),
 							},
 						},
-					},
-					NodeSelector: pulumi.StringMap{
-						"kubernetes.io/os": pulumi.String("linux"),
-					},
-					Tolerations: corev1.TolerationArray{
-						corev1.TolerationArgs{
-							Key:      pulumi.String("node-role.kubernetes.io/control-plane"),
-							Operator: pulumi.String("Exists"),
-							Effect:   pulumi.String("NoSchedule"),
+						corev1.VolumeArgs{
+							Name: pulumi.String("jwt"),
+							Secret: &corev1.SecretVolumeSourceArgs{
+								SecretName: pulumi.String(jwtSecretName),
+							},
 						},
 					},
+					NodeSelector: args.NodeSelector,
+					Tolerations:  args.Tolerations,
 				},
 			},
 		},
 	}, pulumi.Parent(component))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create statefulset: %w", err)
+		return nil, fmt.Errorf("failed to create StatefulSet: %w", err)
 	}
-	component.StatefulSet = statefulSet
 
+	component.Name = args.Name.ToStringOutput()
+	component.Namespace = args.Namespace.ToStringOutput()
 	return component, nil
 }
 
@@ -219,15 +225,21 @@ func createConsensusClientCommand(args *ConsensusClientArgs) pulumi.StringArray 
 		pulumi.String("--suggested-fee-recipient=0x0000000000000000000000000000000000000000"),
 	}
 
-	// Add bootnodes if provided
-	for _, bootnode := range args.Bootnodes {
-		cmd = append(cmd, pulumi.Sprintf("--boot-nodes=%s", bootnode))
-	}
+	// Add bootnodes
+	pulumi.All(args.Bootnodes).ApplyT(func(nodes []interface{}) error {
+		for _, bootnode := range nodes {
+			cmd = append(cmd, pulumi.Sprintf("--boot-nodes=%s", bootnode.(string)))
+		}
+		return nil
+	})
 
-	// Add additional args if provided
-	for _, arg := range args.AdditionalArgs {
-		cmd = append(cmd, pulumi.String(arg))
-	}
+	// Add additional args
+	pulumi.All(args.AdditionalArgs).ApplyT(func(args []interface{}) error {
+		for _, arg := range args {
+			cmd = append(cmd, pulumi.String(arg.(string)))
+		}
+		return nil
+	})
 
 	return cmd
 }

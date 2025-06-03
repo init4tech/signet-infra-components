@@ -6,32 +6,38 @@ import (
 
 // Validate validates the consensus client arguments
 func (args *ConsensusClientArgs) Validate() error {
-	if args.Name == "" {
+	if args.Name == nil {
 		return fmt.Errorf("name is required")
 	}
-	if args.Namespace == "" {
+	if args.Namespace == nil {
 		return fmt.Errorf("namespace is required")
 	}
-	if args.StorageSize == "" {
+	if args.StorageSize == nil {
 		return fmt.Errorf("storageSize is required")
 	}
-	if args.StorageClass == "" {
+	if args.StorageClass == nil {
 		return fmt.Errorf("storageClass is required")
 	}
-	if args.Image == "" {
+	if args.Image == nil {
 		return fmt.Errorf("image is required")
 	}
-	if args.ExecutionClientEndpoint == "" {
+	if args.ImagePullPolicy == nil {
+		return fmt.Errorf("imagePullPolicy is required")
+	}
+	if args.JWTSecret == nil {
+		return fmt.Errorf("jwtSecret is required")
+	}
+	if args.P2PPort == nil {
+		return fmt.Errorf("p2pPort is required")
+	}
+	if args.BeaconAPIPort == nil {
+		return fmt.Errorf("beaconAPIPort is required")
+	}
+	if args.MetricsPort == nil {
+		return fmt.Errorf("metricsPort is required")
+	}
+	if args.ExecutionClientEndpoint == nil {
 		return fmt.Errorf("executionClientEndpoint is required")
-	}
-	if args.P2PPort <= 0 {
-		return fmt.Errorf("p2pPort must be greater than 0")
-	}
-	if args.MetricsPort <= 0 {
-		return fmt.Errorf("metricsPort must be greater than 0")
-	}
-	if args.BeaconAPIPort <= 0 {
-		return fmt.Errorf("beaconApiPort must be greater than 0")
 	}
 	return nil
 }
