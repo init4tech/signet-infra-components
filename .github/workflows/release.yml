@@ -5,6 +5,11 @@ on:
     inputs:
       bump:
         description: "Version bump (patch | minor | major)"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
         required: true
         default: patch
 
