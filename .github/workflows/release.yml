@@ -44,22 +44,13 @@ jobs:
         next="v${major}.${minor}.${patch}"
         echo "next=$next" >>"$GITHUB_OUTPUT"
 
-    # ───────── 2. tag & push ─────────
-    - name: Tag and push
-      shell: bash
-      run: |
-        tag=${{ steps.version.outputs.next }}
-        git tag -s "$tag" -m "Release $tag" || git tag -a "$tag" -m "Release $tag"
-        git push origin HEAD:main
-        git push origin "$tag"
-
-    # ───────── 3. create & upload release ─────────
+    # ───────── 2. create & upload release ─────────
     - name: Create GitHub release
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       shell: bash
       run: |
         tag=${{ steps.version.outputs.next }}
-        gh release create "$tag" dist/* \
+        gh release create "$tag" \
           --title "$tag" \
           --generate-notes
