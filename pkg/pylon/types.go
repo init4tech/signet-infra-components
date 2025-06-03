@@ -1,6 +1,8 @@
 package pylon
 
 import (
+	"github.com/init4tech/signet-infra-components/pkg/ethereum"
+	v1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -35,4 +37,6 @@ type Env struct {
 
 type PylonComponent struct {
 	pulumi.ResourceState
+	EthereumNode      *ethereum.EthereumNodeComponent
+	PylonEnvConfigMap *v1.ConfigMap
 }
