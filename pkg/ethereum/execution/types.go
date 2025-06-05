@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"github.com/init4tech/signet-infra-components/pkg/utils"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
 	corev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -44,6 +45,8 @@ type ExecutionClientArgs struct {
 	Bootnodes pulumi.StringArray `pulumi:"bootnodes,optional"`
 	// AdditionalArgs are additional command line arguments
 	AdditionalArgs pulumi.StringArray `pulumi:"additionalArgs,optional"`
+	// Environment variables
+	ExecutionClientEnv ExecutionClientEnv `pulumi:"executionClientEnv,optional"`
 }
 
 // ExecutionClientComponent represents an execution client deployment
@@ -66,4 +69,15 @@ type ExecutionClientComponent struct {
 	RPCService *corev1.Service
 	// StatefulSet is the stateful set
 	StatefulSet *appsv1.StatefulSet
+}
+
+// ExecutionClientEnv contains environment variables for the execution client
+type ExecutionClientEnv struct {
+	// Add any environment variables needed by the execution client
+	RustLog pulumi.StringInput `pulumi:"rustLog"`
+}
+
+// GetEnvMap implements the utils.EnvProvider interface
+func (e ExecutionClientEnv) GetEnvMap() pulumi.StringMap {
+	return utils.CreateEnvMap(e)
 }
