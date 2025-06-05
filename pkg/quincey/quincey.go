@@ -140,7 +140,7 @@ func createDeployment(ctx *pulumi.Context, args *QuinceyComponentArgs, parent *Q
 func createConfigMap(ctx *pulumi.Context, args *QuinceyComponentArgs, parent *QuinceyComponent) (*corev1.ConfigMap, error) {
 	labels := utils.CreateResourceLabels(ComponentName, ServiceName, DefaultAppSelector, nil)
 
-	return utils.CreateConfigMap(ctx, ServiceName, args.Namespace, labels, args.Env)
+	return utils.CreateConfigMap(ctx, ServiceName, args.Namespace, labels, &args.Env)
 }
 
 // createContainer creates the container specification for the Quincey service

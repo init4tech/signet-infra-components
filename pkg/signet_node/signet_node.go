@@ -292,8 +292,8 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	}
 
 	// Create ConfigMap for consensus environment variables
-	consensusEnv := map[string]pulumi.StringInput{
-		"EXAMPLE": pulumi.String("example"),
+	consensusEnv := ConsensusEnv{
+		Example: pulumi.String("example"),
 	}
 
 	consensusConfigMapName := "consensus-configmap-env-config"

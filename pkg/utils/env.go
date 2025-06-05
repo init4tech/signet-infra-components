@@ -19,12 +19,12 @@ type EnvProvider interface {
 
 // CreateConfigMap creates a Kubernetes ConfigMap from an environment variables struct
 // It automatically converts field names to environment variable format (UPPER_SNAKE_CASE)
-func CreateConfigMap(
+func CreateConfigMap[T EnvProvider](
 	ctx *pulumi.Context,
 	name string,
 	namespace pulumi.StringInput,
 	labels pulumi.StringMap,
-	env interface{},
+	env T,
 ) (*corev1.ConfigMap, error) {
 	// Create metadata for ConfigMap
 	metadata := &metav1.ObjectMetaArgs{
@@ -33,16 +33,8 @@ func CreateConfigMap(
 		Labels:    labels,
 	}
 
-	// Get environment variables as a map
-	data := pulumi.StringMap{}
-
-	// If the env object implements EnvProvider, use its GetEnvMap method
-	if provider, ok := env.(EnvProvider); ok {
-		data = provider.GetEnvMap()
-	} else {
-		// Otherwise use reflection to extract fields
-		data = CreateEnvMap(env)
-	}
+	// Get environment variables as a map using the EnvProvider interface
+	data := env.GetEnvMap()
 
 	// Create and return ConfigMap
 	return corev1.NewConfigMap(ctx, name, &corev1.ConfigMapArgs{
@@ -53,7 +45,7 @@ func CreateConfigMap(
 
 // CreateEnvMap converts a struct to a map of environment variables
 // Field names are converted from camelCase to UPPER_SNAKE_CASE
-func CreateEnvMap(env interface{}) pulumi.StringMap {
+func CreateEnvMap[T any](env T) pulumi.StringMap {
 	result := pulumi.StringMap{}
 	t := reflect.TypeOf(env)
 	v := reflect.ValueOf(env)
