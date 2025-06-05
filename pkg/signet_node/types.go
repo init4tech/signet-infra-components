@@ -75,6 +75,16 @@ func (e SignetNodeEnv) GetEnvMap() pulumi.StringMap {
 	return utils.CreateEnvMap(e)
 }
 
+// ConsensusEnv contains environment variables for the consensus client
+type ConsensusEnv struct {
+	Example pulumi.StringInput `pulumi:"example"`
+}
+
+// GetEnvMap implements the utils.EnvProvider interface
+func (e ConsensusEnv) GetEnvMap() pulumi.StringMap {
+	return utils.CreateEnvMap(e)
+}
+
 // SignetNode interface defines methods that the SignetNodeComponent must implement
 type SignetNode interface {
 }
