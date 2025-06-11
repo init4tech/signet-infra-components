@@ -235,7 +235,7 @@ func createConsensusClientCommand(args *ConsensusClientArgs) pulumi.StringArray 
 	// Add additional args
 	if args.AdditionalArgs != nil {
 		for _, arg := range args.AdditionalArgs {
-			cmd = append(cmd, pulumi.String(arg))
+			cmd = append(cmd, arg)
 		}
 	}
 
