@@ -226,20 +226,18 @@ func createConsensusClientCommand(args *ConsensusClientArgs) pulumi.StringArray 
 	}
 
 	// Add bootnodes
-	pulumi.All(args.Bootnodes).ApplyT(func(nodes []interface{}) error {
-		for _, bootnode := range nodes {
-			cmd = append(cmd, pulumi.Sprintf("--boot-nodes=%s", bootnode.(string)))
+	if args.Bootnodes != nil {
+		for _, bootnode := range args.Bootnodes {
+			cmd = append(cmd, pulumi.Sprintf("--boot-nodes=%s", bootnode))
 		}
-		return nil
-	})
+	}
 
 	// Add additional args
-	pulumi.All(args.AdditionalArgs).ApplyT(func(args []interface{}) error {
-		for _, arg := range args {
-			cmd = append(cmd, pulumi.String(arg.(string)))
+	if args.AdditionalArgs != nil {
+		for _, arg := range args.AdditionalArgs {
+			cmd = append(cmd, pulumi.String(arg))
 		}
-		return nil
-	})
+	}
 
 	return cmd
 }
