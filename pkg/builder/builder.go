@@ -23,6 +23,9 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 		return nil, fmt.Errorf("invalid builder component args: %w", err)
 	}
 
+	// Convert public args to internal args for use with Pulumi
+	internalArgs := args.toInternal()
+
 	component := &BuilderComponent{
 		BuilderComponentArgs: args,
 	}
@@ -36,7 +39,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	sa, err := corev1.NewServiceAccount(ctx, serviceAccountName, &corev1.ServiceAccountArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(serviceAccountName),
-			Namespace: pulumi.String(args.Namespace),
+			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, serviceAccountName, args.Name, nil),
 		},
 	}, pulumi.Parent(component))
@@ -50,9 +53,9 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 	configMap, err := utils.CreateConfigMap(
 		ctx,
 		configMapName,
-		pulumi.String(args.Namespace),
+		internalArgs.Namespace,
 		utils.CreateResourceLabels(args.Name, configMapName, args.Name, nil),
-		args.BuilderEnv,
+		internalArgs.BuilderEnv,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create environment ConfigMap: %w", err)
@@ -95,7 +98,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 							},
 							Ports: corev1.ContainerPortArray{
 								&corev1.ContainerPortArgs{
-									ContainerPort: parseBuilderPort(args.BuilderEnv.BuilderPort),
+									ContainerPort: parseBuilderPort(internalArgs.BuilderEnv.BuilderPort),
 								},
 								&corev1.ContainerPortArgs{
 									ContainerPort: pulumi.Int(MetricsPort),
@@ -105,7 +108,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 							LivenessProbe: &corev1.ProbeArgs{
 								HttpGet: &corev1.HTTPGetActionArgs{
 									Path: pulumi.String(HealthCheckPath),
-									Port: parseBuilderPort(args.BuilderEnv.BuilderPort),
+									Port: parseBuilderPort(internalArgs.BuilderEnv.BuilderPort),
 								},
 								InitialDelaySeconds: pulumi.Int(ProbeInitialDelaySeconds),
 								PeriodSeconds:       pulumi.Int(LivenessProbePeriod),
@@ -115,7 +118,7 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 							ReadinessProbe: &corev1.ProbeArgs{
 								HttpGet: &corev1.HTTPGetActionArgs{
 									Path: pulumi.String(HealthCheckPath),
-									Port: parseBuilderPort(args.BuilderEnv.BuilderPort),
+									Port: parseBuilderPort(internalArgs.BuilderEnv.BuilderPort),
 								},
 								InitialDelaySeconds: pulumi.Int(ProbeInitialDelaySeconds),
 								PeriodSeconds:       pulumi.Int(ProbePeriodSeconds),
@@ -148,8 +151,8 @@ func NewBuilder(ctx *pulumi.Context, args BuilderComponentArgs, opts ...pulumi.R
 			Selector: podLabels,
 			Ports: corev1.ServicePortArray{
 				&corev1.ServicePortArgs{
-					Port:       parseBuilderPort(args.BuilderEnv.BuilderPort),
-					TargetPort: parseBuilderPort(args.BuilderEnv.BuilderPort),
+					Port:       parseBuilderPort(internalArgs.BuilderEnv.BuilderPort),
+					TargetPort: parseBuilderPort(internalArgs.BuilderEnv.BuilderPort),
 					Name:       pulumi.String("http"),
 				},
 				&corev1.ServicePortArgs{

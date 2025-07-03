@@ -23,112 +23,112 @@ func (args *BuilderComponentArgs) Validate() error {
 
 // Validate validates the BuilderEnv
 func (env *BuilderEnv) Validate() error {
-	if env.AuthTokenRefreshInterval == nil {
+	if env.AuthTokenRefreshInterval == "" {
 		return fmt.Errorf("auth token refresh interval is required")
 	}
-	if env.AwsAccountId == nil {
+	if env.AwsAccountId == "" {
 		return fmt.Errorf("aws account id is required")
 	}
-	if env.AwsAccessKeyId == nil {
+	if env.AwsAccessKeyId == "" {
 		return fmt.Errorf("aws access key id is required")
 	}
-	if env.AwsRegion == nil {
+	if env.AwsRegion == "" {
 		return fmt.Errorf("aws region is required")
 	}
-	if env.AwsSecretAccessKey == nil {
+	if env.AwsSecretAccessKey == "" {
 		return fmt.Errorf("aws secret access key is required")
 	}
-	if env.BlockConfirmationBuffer == nil {
+	if env.BlockConfirmationBuffer == 0 {
 		return fmt.Errorf("block confirmation buffer is required")
 	}
-	if env.BlockQueryCutoff == nil {
+	if env.BlockQueryCutoff == 0 {
 		return fmt.Errorf("block query cutoff is required")
 	}
-	if env.BlockQueryStart == nil {
+	if env.BlockQueryStart == 0 {
 		return fmt.Errorf("block query start is required")
 	}
-	if env.BuilderHelperAddress == nil {
+	if env.BuilderHelperAddress == "" {
 		return fmt.Errorf("builder helper address is required")
 	}
-	if env.BuilderKey == nil {
+	if env.BuilderKey == "" {
 		return fmt.Errorf("builder key is required")
 	}
-	if env.BuilderPort == nil {
+	if env.BuilderPort == 0 {
 		return fmt.Errorf("builder port is required")
 	}
-	if env.BuilderRewardsAddress == nil {
+	if env.BuilderRewardsAddress == "" {
 		return fmt.Errorf("builder rewards address is required")
 	}
-	if env.ChainOffset == nil {
+	if env.ChainOffset == 0 {
 		return fmt.Errorf("chain offset is required")
 	}
-	if env.ConcurrentLimit == nil {
+	if env.ConcurrentLimit == 0 {
 		return fmt.Errorf("concurrent limit is required")
 	}
-	if env.HostChainId == nil {
+	if env.HostChainId == 0 {
 		return fmt.Errorf("host chain id is required")
 	}
-	if env.HostRpcUrl == nil {
+	if env.HostRpcUrl == "" {
 		return fmt.Errorf("host RPC URL is required")
 	}
-	if env.OauthAudience == nil {
+	if env.OauthAudience == "" {
 		return fmt.Errorf("oauth audience is required")
 	}
-	if env.OauthAuthenticateUrl == nil {
+	if env.OauthAuthenticateUrl == "" {
 		return fmt.Errorf("oauth authenticate URL is required")
 	}
-	if env.OAuthClientId == nil {
+	if env.OAuthClientId == "" {
 		return fmt.Errorf("oauth client ID is required")
 	}
-	if env.OauthClientSecret == nil {
+	if env.OauthClientSecret == "" {
 		return fmt.Errorf("oauth client secret is required")
 	}
-	if env.OauthIssuer == nil {
+	if env.OauthIssuer == "" {
 		return fmt.Errorf("oauth issuer is required")
 	}
-	if env.OauthTokenUrl == nil {
+	if env.OauthTokenUrl == "" {
 		return fmt.Errorf("oauth token URL is required")
 	}
-	if env.OtelExporterOtlpEndpoint == nil {
+	if env.OtelExporterOtlpEndpoint == "" {
 		return fmt.Errorf("otel exporter otlp endpoint is required")
 	}
-	if env.QuinceyUrl == nil {
+	if env.QuinceyUrl == "" {
 		return fmt.Errorf("quincey URL is required")
 	}
-	if env.RollupBlockGasLimit == nil {
+	if env.RollupBlockGasLimit == 0 {
 		return fmt.Errorf("rollup block gas limit is required")
 	}
-	if env.RollupChainId == nil {
+	if env.RollupChainId == 0 {
 		return fmt.Errorf("rollup chain id is required")
 	}
-	if env.RollupRpcUrl == nil {
+	if env.RollupRpcUrl == "" {
 		return fmt.Errorf("rollup RPC URL is required")
 	}
-	if env.RustLog == nil {
+	if env.RustLog == "" {
 		return fmt.Errorf("rust log is required")
 	}
-	if env.SlotOffset == nil {
+	if env.SlotOffset == 0 {
 		return fmt.Errorf("slot offset is required")
 	}
-	if env.StartTimestamp == nil {
+	if env.StartTimestamp == 0 {
 		return fmt.Errorf("start timestamp is required")
 	}
-	if env.SubmitViaCallData == nil {
+	if env.SubmitViaCallData == "" {
 		return fmt.Errorf("submit via call data is required")
 	}
-	if env.TargetSlotTime == nil {
+	if env.TargetSlotTime == 0 {
 		return fmt.Errorf("target slot time is required")
 	}
-	if env.TxBroadcastUrls == nil {
+	if env.TxBroadcastUrls == "" {
 		return fmt.Errorf("tx broadcast URLs is required")
 	}
-	if env.TxPoolCacheDuration == nil {
+	if env.TxPoolCacheDuration == 0 {
 		return fmt.Errorf("tx pool cache duration is required")
 	}
-	if env.TxPoolUrl == nil {
+	if env.TxPoolUrl == "" {
 		return fmt.Errorf("tx pool URL is required")
 	}
-	if env.ZenithAddress == nil {
+	if env.ZenithAddress == "" {
 		return fmt.Errorf("zenith address is required")
 	}
 
