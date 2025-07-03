@@ -2,83 +2,67 @@ package execution
 
 import (
 	"fmt"
-
-	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 // Validate validates the execution client arguments
 // NOTE: This only works for pulumi.Int (not computed outputs) in tests.
 func (args *ExecutionClientArgs) Validate() error {
-	if args.Name == nil {
+	if args.Name == "" {
 		return fmt.Errorf("name is required")
 	}
-	if args.Namespace == nil {
+	if args.Namespace == "" {
 		return fmt.Errorf("namespace is required")
 	}
-	if args.StorageSize == nil {
+	if args.StorageSize == "" {
 		return fmt.Errorf("storageSize is required")
 	}
-	if args.StorageClass == nil {
+	if args.StorageClass == "" {
 		return fmt.Errorf("storageClass is required")
 	}
-	if args.Image == nil {
+	if args.Image == "" {
 		return fmt.Errorf("image is required")
 	}
-	if args.JWTSecret == nil {
+	if args.ImagePullPolicy == "" {
+		return fmt.Errorf("imagePullPolicy is required")
+	}
+	if args.JWTSecret == "" {
 		return fmt.Errorf("jwtSecret is required")
 	}
-	if args.P2PPort == nil {
+	if args.P2PPort == 0 {
 		return fmt.Errorf("p2pPort is required")
 	}
-	if args.RPCPort == nil {
+	if args.RPCPort == 0 {
 		return fmt.Errorf("rpcPort is required")
 	}
-	if args.WSPort == nil {
+	if args.WSPort == 0 {
 		return fmt.Errorf("wsPort is required")
 	}
-	if args.MetricsPort == nil {
+	if args.MetricsPort == 0 {
 		return fmt.Errorf("metricsPort is required")
 	}
-	if args.AuthRPCPort == nil {
+	if args.AuthRPCPort == 0 {
 		return fmt.Errorf("authRpcPort is required")
 	}
-	if args.DiscoveryPort == nil {
+	if args.DiscoveryPort == 0 {
 		return fmt.Errorf("discoveryPort is required")
 	}
 
-	// Only works for pulumi.Int, not computed outputs
-	getInt := func(input pulumi.IntInput) int {
-		var v int
-		input.ToIntOutput().ApplyT(func(i int) int {
-			v = i
-			return i
-		})
-		return v
-	}
-
-	p2pPort := getInt(args.P2PPort)
-	rpcPort := getInt(args.RPCPort)
-	wsPort := getInt(args.WSPort)
-	metricsPort := getInt(args.MetricsPort)
-	authRpcPort := getInt(args.AuthRPCPort)
-	discoveryPort := getInt(args.DiscoveryPort)
-
-	if p2pPort <= 0 {
+	if args.P2PPort <= 0 {
 		return fmt.Errorf("p2pPort must be greater than zero")
 	}
-	if rpcPort <= 0 {
+	if args.RPCPort <= 0 {
 		return fmt.Errorf("rpcPort must be greater than zero")
 	}
-	if wsPort <= 0 {
+	if args.WSPort <= 0 {
 		return fmt.Errorf("wsPort must be greater than zero")
 	}
-	if metricsPort <= 0 {
+	if args.MetricsPort <= 0 {
 		return fmt.Errorf("metricsPort must be greater than zero")
 	}
-	if authRpcPort <= 0 {
+	if args.AuthRPCPort <= 0 {
 		return fmt.Errorf("authRpcPort must be greater than zero")
 	}
-	if discoveryPort <= 0 {
+	if args.DiscoveryPort <= 0 {
 		return fmt.Errorf("discoveryPort must be greater than zero")
 	}
 	return nil

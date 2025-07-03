@@ -16,26 +16,26 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 		return nil, fmt.Errorf("invalid consensus client args: %w", err)
 	}
 
-	component := &ConsensusClientComponent{}
+	// Convert public args to internal args for use with Pulumi
+	internalArgs := args.toInternal()
 
-	var name string
-	pulumi.All(args.Name).ApplyT(func(values []interface{}) error {
-		name = values[0].(string)
-		return nil
-	})
+	component := &ConsensusClientComponent{
+		Name:      args.Name,
+		Namespace: args.Namespace,
+	}
 
-	err := ctx.RegisterComponentResource("signet:consensus:ConsensusClient", name, component)
+	err := ctx.RegisterComponentResource("signet:consensus:ConsensusClient", args.Name, component)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register component resource: %w", err)
 	}
 
 	// Create PVC for data storage
-	pvcName := fmt.Sprintf("%s-data", name)
+	pvcName := fmt.Sprintf("%s-data", args.Name)
 	component.PVC, err = corev1.NewPersistentVolumeClaim(ctx, pvcName, &corev1.PersistentVolumeClaimArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(pvcName),
-			Namespace: args.Namespace,
-			Labels:    utils.CreateResourceLabels(name, pvcName, name, nil),
+			Namespace: internalArgs.Namespace,
+			Labels:    utils.CreateResourceLabels(args.Name, pvcName, args.Name, nil),
 		},
 		Spec: &corev1.PersistentVolumeClaimSpecArgs{
 			AccessModes: pulumi.StringArray{
@@ -43,10 +43,10 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 			},
 			Resources: &corev1.VolumeResourceRequirementsArgs{
 				Requests: pulumi.StringMap{
-					"storage": args.StorageSize,
+					"storage": internalArgs.StorageSize,
 				},
 			},
-			StorageClassName: args.StorageClass,
+			StorageClassName: internalArgs.StorageClass,
 		},
 	}, pulumi.Parent(component))
 	if err != nil {
@@ -54,15 +54,15 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 	}
 
 	// Create JWT secret
-	jwtSecretName := fmt.Sprintf("%s-jwt", name)
+	jwtSecretName := fmt.Sprintf("%s-jwt", args.Name)
 	component.JWTSecret, err = corev1.NewSecret(ctx, jwtSecretName, &corev1.SecretArgs{
 		StringData: pulumi.StringMap{
-			"jwt.hex": args.JWTSecret,
+			"jwt.hex": internalArgs.JWTSecret,
 		},
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(jwtSecretName),
-			Namespace: args.Namespace,
-			Labels:    utils.CreateResourceLabels(name, jwtSecretName, name, nil),
+			Namespace: internalArgs.Namespace,
+			Labels:    utils.CreateResourceLabels(args.Name, jwtSecretName, args.Name, nil),
 		},
 	}, pulumi.Parent(component))
 	if err != nil {
@@ -70,22 +70,22 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 	}
 
 	// Create P2P service
-	p2pServiceName := fmt.Sprintf("%s-p2p", name)
+	p2pServiceName := fmt.Sprintf("%s-p2p", args.Name)
 	component.P2PService, err = corev1.NewService(ctx, p2pServiceName, &corev1.ServiceArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(p2pServiceName),
-			Namespace: args.Namespace,
-			Labels:    utils.CreateResourceLabels(name, p2pServiceName, name, nil),
+			Namespace: internalArgs.Namespace,
+			Labels:    utils.CreateResourceLabels(args.Name, p2pServiceName, args.Name, nil),
 		},
 		Spec: &corev1.ServiceSpecArgs{
 			Selector: pulumi.StringMap{
-				"app": pulumi.String(name),
+				"app": pulumi.String(args.Name),
 			},
 			Ports: corev1.ServicePortArray{
 				corev1.ServicePortArgs{
 					Name:       pulumi.String("p2p"),
-					Port:       args.P2PPort,
-					TargetPort: args.P2PPort,
+					Port:       internalArgs.P2PPort,
+					TargetPort: internalArgs.P2PPort,
 					Protocol:   pulumi.String("TCP"),
 				},
 			},
@@ -96,27 +96,27 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 	}
 
 	// Create Beacon API service
-	beaconAPIServiceName := fmt.Sprintf("%s-beacon-api", name)
+	beaconAPIServiceName := fmt.Sprintf("%s-beacon-api", args.Name)
 	component.BeaconAPIService, err = corev1.NewService(ctx, beaconAPIServiceName, &corev1.ServiceArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(beaconAPIServiceName),
-			Namespace: args.Namespace,
-			Labels:    utils.CreateResourceLabels(name, beaconAPIServiceName, name, nil),
+			Namespace: internalArgs.Namespace,
+			Labels:    utils.CreateResourceLabels(args.Name, beaconAPIServiceName, args.Name, nil),
 		},
 		Spec: &corev1.ServiceSpecArgs{
 			Selector: pulumi.StringMap{
-				"app": pulumi.String(name),
+				"app": pulumi.String(args.Name),
 			},
 			Ports: corev1.ServicePortArray{
 				corev1.ServicePortArgs{
 					Name:       pulumi.String("beacon-api"),
-					Port:       args.BeaconAPIPort,
-					TargetPort: args.BeaconAPIPort,
+					Port:       internalArgs.BeaconAPIPort,
+					TargetPort: internalArgs.BeaconAPIPort,
 				},
 				corev1.ServicePortArgs{
 					Name:       pulumi.String("metrics"),
-					Port:       args.MetricsPort,
-					TargetPort: args.MetricsPort,
+					Port:       internalArgs.MetricsPort,
+					TargetPort: internalArgs.MetricsPort,
 				},
 			},
 		},
@@ -126,46 +126,46 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 	}
 
 	// Create StatefulSet
-	statefulSetName := name
+	statefulSetName := args.Name
 	component.StatefulSet, err = appsv1.NewStatefulSet(ctx, statefulSetName, &appsv1.StatefulSetArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(statefulSetName),
-			Namespace: args.Namespace,
-			Labels:    utils.CreateResourceLabels(name, statefulSetName, name, nil),
+			Namespace: internalArgs.Namespace,
+			Labels:    utils.CreateResourceLabels(args.Name, statefulSetName, args.Name, nil),
 		},
 		Spec: &appsv1.StatefulSetSpecArgs{
 			Replicas: pulumi.Int(1),
 			Selector: &metav1.LabelSelectorArgs{
 				MatchLabels: pulumi.StringMap{
-					"app": pulumi.String(name),
+					"app": pulumi.String(args.Name),
 				},
 			},
 			Template: &corev1.PodTemplateSpecArgs{
 				Metadata: &metav1.ObjectMetaArgs{
 					Labels: pulumi.StringMap{
-						"app": pulumi.String(name),
+						"app": pulumi.String(args.Name),
 					},
 				},
 				Spec: &corev1.PodSpecArgs{
 					Containers: corev1.ContainerArray{
 						corev1.ContainerArgs{
 							Name:            pulumi.String("consensus"),
-							Image:           args.Image,
-							ImagePullPolicy: args.ImagePullPolicy,
+							Image:           internalArgs.Image,
+							ImagePullPolicy: internalArgs.ImagePullPolicy,
 							Command:         createConsensusClientCommand(args),
 							Ports: corev1.ContainerPortArray{
 								corev1.ContainerPortArgs{
 									Name:          pulumi.String("p2p"),
-									ContainerPort: args.P2PPort,
+									ContainerPort: internalArgs.P2PPort,
 									Protocol:      pulumi.String("TCP"),
 								},
 								corev1.ContainerPortArgs{
 									Name:          pulumi.String("beacon-api"),
-									ContainerPort: args.BeaconAPIPort,
+									ContainerPort: internalArgs.BeaconAPIPort,
 								},
 								corev1.ContainerPortArgs{
 									Name:          pulumi.String("metrics"),
-									ContainerPort: args.MetricsPort,
+									ContainerPort: internalArgs.MetricsPort,
 								},
 							},
 							VolumeMounts: corev1.VolumeMountArray{
@@ -205,8 +205,7 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 		return nil, fmt.Errorf("failed to create StatefulSet: %w", err)
 	}
 
-	component.Name = args.Name.ToStringOutput()
-	component.Namespace = args.Namespace.ToStringOutput()
+	return component, nil
 	return component, nil
 }
 
@@ -235,7 +234,7 @@ func createConsensusClientCommand(args *ConsensusClientArgs) pulumi.StringArray 
 	// Add additional args
 	if args.AdditionalArgs != nil {
 		for _, arg := range args.AdditionalArgs {
-			cmd = append(cmd, arg)
+			cmd = append(cmd, pulumi.String(arg))
 		}
 	}
 
