@@ -12,23 +12,23 @@ func TestCreateContainer(t *testing.T) {
 	// Test cases
 	tests := []struct {
 		name     string
-		args     *QuinceyComponentArgs
+		args     *quinceyComponentArgsInternal
 		port     pulumi.IntOutput
 		wantName string
 	}{
 		{
 			name: "valid container config",
-			args: &QuinceyComponentArgs{
+			args: &quinceyComponentArgsInternal{
 				Image: pulumi.String("quincey:test"),
-				Env: QuinceyEnv{
+				Env: quinceyEnvInternal{
 					QuinceyPort:              pulumi.String("8080"),
 					QuinceyKeyId:             pulumi.String("test-key-id"),
 					AwsAccessKeyId:           pulumi.String("test-aws-key"),
 					AwsSecretAccessKey:       pulumi.String("test-aws-secret"),
 					AwsDefaultRegion:         pulumi.String("us-west-2"),
-					BlockQueryStart:          pulumi.String("0"),
+					BlockQueryStart:          pulumi.String("1"),
 					BlockQueryCutoff:         pulumi.String("1000"),
-					ChainOffset:              pulumi.String("0"),
+					ChainOffset:              pulumi.String("10"),
 					HostRpcUrl:               pulumi.String("http://test-rpc:8545"),
 					OauthIssuer:              pulumi.String("https://test-issuer"),
 					OauthJwksUri:             pulumi.String("https://test-jwks"),
@@ -57,41 +57,39 @@ func TestCreateContainer(t *testing.T) {
 // TestQuinceyEnv tests the environment variable handling
 func TestQuinceyEnv(t *testing.T) {
 	env := QuinceyEnv{
-		QuinceyPort:              pulumi.String("8080"),
-		QuinceyKeyId:             pulumi.String("test-key-id"),
-		AwsAccessKeyId:           pulumi.String("test-aws-key"),
-		AwsSecretAccessKey:       pulumi.String("test-aws-secret"),
-		AwsDefaultRegion:         pulumi.String("us-west-2"),
-		BlockQueryStart:          pulumi.String("0"),
-		BlockQueryCutoff:         pulumi.String("1000"),
-		ChainOffset:              pulumi.String("0"),
-		HostRpcUrl:               pulumi.String("http://test-rpc:8545"),
-		OauthIssuer:              pulumi.String("https://test-issuer"),
-		OauthJwksUri:             pulumi.String("https://test-jwks"),
-		QuinceyBuilders:          pulumi.String("test-builder"),
-		OtelExporterOtlpEndpoint: pulumi.String("http://otel:4317"),
-		OtelExporterOtlpProtocol: pulumi.String("grpc"),
-		RustLog:                  pulumi.String("info"),
+		QuinceyPort:              8080,
+		QuinceyKeyId:             "test-key-id",
+		AwsAccessKeyId:           "test-aws-key",
+		AwsSecretAccessKey:       "test-aws-secret",
+		AwsDefaultRegion:         "us-west-2",
+		BlockQueryStart:          1,
+		BlockQueryCutoff:         1000,
+		ChainOffset:              10,
+		HostRpcUrl:               "http://test-rpc:8545",
+		OauthIssuer:              "https://test-issuer",
+		OauthJwksUri:             "https://test-jwks",
+		QuinceyBuilders:          "test-builder",
+		OtelExporterOtlpEndpoint: "http://otel:4317",
+		OtelExporterOtlpProtocol: "grpc",
+		RustLog:                  "info",
 	}
 
-	// Since we can't directly test Pulumi outputs in unit tests,
-	// we'll verify that the environment variables are properly set
-	// by checking that the struct fields are not nil
-	assert.NotNil(t, env.QuinceyPort)
-	assert.NotNil(t, env.QuinceyKeyId)
-	assert.NotNil(t, env.AwsAccessKeyId)
-	assert.NotNil(t, env.AwsSecretAccessKey)
-	assert.NotNil(t, env.AwsDefaultRegion)
-	assert.NotNil(t, env.BlockQueryStart)
-	assert.NotNil(t, env.BlockQueryCutoff)
-	assert.NotNil(t, env.ChainOffset)
-	assert.NotNil(t, env.HostRpcUrl)
-	assert.NotNil(t, env.OauthIssuer)
-	assert.NotNil(t, env.OauthJwksUri)
-	assert.NotNil(t, env.QuinceyBuilders)
-	assert.NotNil(t, env.OtelExporterOtlpEndpoint)
-	assert.NotNil(t, env.OtelExporterOtlpProtocol)
-	assert.NotNil(t, env.RustLog)
+	// Test that the environment variables are properly set
+	assert.Equal(t, 8080, env.QuinceyPort)
+	assert.Equal(t, "test-key-id", env.QuinceyKeyId)
+	assert.Equal(t, "test-aws-key", env.AwsAccessKeyId)
+	assert.Equal(t, "test-aws-secret", env.AwsSecretAccessKey)
+	assert.Equal(t, "us-west-2", env.AwsDefaultRegion)
+	assert.Equal(t, 1, env.BlockQueryStart)
+	assert.Equal(t, 1000, env.BlockQueryCutoff)
+	assert.Equal(t, 10, env.ChainOffset)
+	assert.Equal(t, "http://test-rpc:8545", env.HostRpcUrl)
+	assert.Equal(t, "https://test-issuer", env.OauthIssuer)
+	assert.Equal(t, "https://test-jwks", env.OauthJwksUri)
+	assert.Equal(t, "test-builder", env.QuinceyBuilders)
+	assert.Equal(t, "http://otel:4317", env.OtelExporterOtlpEndpoint)
+	assert.Equal(t, "grpc", env.OtelExporterOtlpProtocol)
+	assert.Equal(t, "info", env.RustLog)
 }
 
 // TestConstants tests the package constants
@@ -112,79 +110,79 @@ func TestQuinceyEnvValidation(t *testing.T) {
 		{
 			name: "valid env with all required fields",
 			env: QuinceyEnv{
-				QuinceyPort:              pulumi.String("8080"),
-				QuinceyKeyId:             pulumi.String("test-key-id"),
-				AwsAccessKeyId:           pulumi.String("test-aws-key"),
-				AwsSecretAccessKey:       pulumi.String("test-aws-secret"),
-				AwsDefaultRegion:         pulumi.String("us-west-2"),
-				BlockQueryStart:          pulumi.String("0"),
-				BlockQueryCutoff:         pulumi.String("1000"),
-				ChainOffset:              pulumi.String("0"),
-				HostRpcUrl:               pulumi.String("http://test-rpc:8545"),
-				OauthIssuer:              pulumi.String("https://test-issuer"),
-				OauthJwksUri:             pulumi.String("https://test-jwks"),
-				QuinceyBuilders:          pulumi.String("test-builder"),
-				OtelExporterOtlpEndpoint: pulumi.String("http://otel:4317"),
-				OtelExporterOtlpProtocol: pulumi.String("grpc"),
-				RustLog:                  pulumi.String("info"),
+				QuinceyPort:              8080,
+				QuinceyKeyId:             "test-key-id",
+				AwsAccessKeyId:           "test-aws-key",
+				AwsSecretAccessKey:       "test-aws-secret",
+				AwsDefaultRegion:         "us-west-2",
+				BlockQueryStart:          1,
+				BlockQueryCutoff:         1000,
+				ChainOffset:              10,
+				HostRpcUrl:               "http://test-rpc:8545",
+				OauthIssuer:              "https://test-issuer",
+				OauthJwksUri:             "https://test-jwks",
+				QuinceyBuilders:          "test-builder",
+				OtelExporterOtlpEndpoint: "http://otel:4317",
+				OtelExporterOtlpProtocol: "grpc",
+				RustLog:                  "info",
 			},
 			expectError: false,
 		},
 		{
 			name: "missing required field QuinceyPort",
 			env: QuinceyEnv{
-				QuinceyKeyId:             pulumi.String("test-key-id"),
-				AwsAccessKeyId:           pulumi.String("test-aws-key"),
-				AwsSecretAccessKey:       pulumi.String("test-aws-secret"),
-				AwsDefaultRegion:         pulumi.String("us-west-2"),
-				BlockQueryStart:          pulumi.String("0"),
-				BlockQueryCutoff:         pulumi.String("1000"),
-				ChainOffset:              pulumi.String("0"),
-				HostRpcUrl:               pulumi.String("http://test-rpc:8545"),
-				OauthIssuer:              pulumi.String("https://test-issuer"),
-				OauthJwksUri:             pulumi.String("https://test-jwks"),
-				QuinceyBuilders:          pulumi.String("test-builder"),
-				OtelExporterOtlpEndpoint: pulumi.String("http://otel:4317"),
-				OtelExporterOtlpProtocol: pulumi.String("grpc"),
-				RustLog:                  pulumi.String("info"),
+				QuinceyKeyId:             "test-key-id",
+				AwsAccessKeyId:           "test-aws-key",
+				AwsSecretAccessKey:       "test-aws-secret",
+				AwsDefaultRegion:         "us-west-2",
+				BlockQueryStart:          1,
+				BlockQueryCutoff:         1000,
+				ChainOffset:              10,
+				HostRpcUrl:               "http://test-rpc:8545",
+				OauthIssuer:              "https://test-issuer",
+				OauthJwksUri:             "https://test-jwks",
+				QuinceyBuilders:          "test-builder",
+				OtelExporterOtlpEndpoint: "http://otel:4317",
+				OtelExporterOtlpProtocol: "grpc",
+				RustLog:                  "info",
 			},
 			expectError: true,
 		},
 		{
 			name: "missing required field QuinceyKeyId",
 			env: QuinceyEnv{
-				QuinceyPort:              pulumi.String("8080"),
-				AwsAccessKeyId:           pulumi.String("test-aws-key"),
-				AwsSecretAccessKey:       pulumi.String("test-aws-secret"),
-				AwsDefaultRegion:         pulumi.String("us-west-2"),
-				BlockQueryStart:          pulumi.String("0"),
-				BlockQueryCutoff:         pulumi.String("1000"),
-				ChainOffset:              pulumi.String("0"),
-				HostRpcUrl:               pulumi.String("http://test-rpc:8545"),
-				OauthIssuer:              pulumi.String("https://test-issuer"),
-				OauthJwksUri:             pulumi.String("https://test-jwks"),
-				QuinceyBuilders:          pulumi.String("test-builder"),
-				OtelExporterOtlpEndpoint: pulumi.String("http://otel:4317"),
-				OtelExporterOtlpProtocol: pulumi.String("grpc"),
-				RustLog:                  pulumi.String("info"),
+				QuinceyPort:              8080,
+				AwsAccessKeyId:           "test-aws-key",
+				AwsSecretAccessKey:       "test-aws-secret",
+				AwsDefaultRegion:         "us-west-2",
+				BlockQueryStart:          1,
+				BlockQueryCutoff:         1000,
+				ChainOffset:              10,
+				HostRpcUrl:               "http://test-rpc:8545",
+				OauthIssuer:              "https://test-issuer",
+				OauthJwksUri:             "https://test-jwks",
+				QuinceyBuilders:          "test-builder",
+				OtelExporterOtlpEndpoint: "http://otel:4317",
+				OtelExporterOtlpProtocol: "grpc",
+				RustLog:                  "info",
 			},
 			expectError: true,
 		},
 		{
 			name: "missing optional fields",
 			env: QuinceyEnv{
-				QuinceyPort:        pulumi.String("8080"),
-				QuinceyKeyId:       pulumi.String("test-key-id"),
-				AwsAccessKeyId:     pulumi.String("test-aws-key"),
-				AwsSecretAccessKey: pulumi.String("test-aws-secret"),
-				AwsDefaultRegion:   pulumi.String("us-west-2"),
-				BlockQueryStart:    pulumi.String("0"),
-				BlockQueryCutoff:   pulumi.String("1000"),
-				ChainOffset:        pulumi.String("0"),
-				HostRpcUrl:         pulumi.String("http://test-rpc:8545"),
-				OauthIssuer:        pulumi.String("https://test-issuer"),
-				OauthJwksUri:       pulumi.String("https://test-jwks"),
-				QuinceyBuilders:    pulumi.String("test-builder"),
+				QuinceyPort:        8080,
+				QuinceyKeyId:       "test-key-id",
+				AwsAccessKeyId:     "test-aws-key",
+				AwsSecretAccessKey: "test-aws-secret",
+				AwsDefaultRegion:   "us-west-2",
+				BlockQueryStart:    1,
+				BlockQueryCutoff:   1000,
+				ChainOffset:        10,
+				HostRpcUrl:         "http://test-rpc:8545",
+				OauthIssuer:        "https://test-issuer",
+				OauthJwksUri:       "https://test-jwks",
+				QuinceyBuilders:    "test-builder",
 			},
 			expectError: false,
 		},

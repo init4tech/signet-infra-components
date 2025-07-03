@@ -141,8 +141,85 @@ func NewExecutionClient(ctx *pulumi.Context, args *ExecutionClientArgs, opts ...
 		return nil, fmt.Errorf("failed to create RPC service: %w", err)
 	}
 
+	// Create ConfigMap for environment variables if ExecutionClientEnv is provided
+	var configMap *corev1.ConfigMap
+	if args.ExecutionClientEnv != nil {
+		configMapName := fmt.Sprintf("%s-env", name)
+		configMap, err = corev1.NewConfigMap(ctx, configMapName, &corev1.ConfigMapArgs{
+			Data: args.ExecutionClientEnv.GetEnvMap(),
+			Metadata: &metav1.ObjectMetaArgs{
+				Name:      pulumi.String(configMapName),
+				Namespace: args.Namespace,
+				Labels:    utils.CreateResourceLabels(name, configMapName, name, nil),
+			},
+		}, pulumi.Parent(component))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create ConfigMap: %w", err)
+		}
+		component.ConfigMap = configMap
+	}
+
 	// Create StatefulSet
 	statefulSetName := name
+
+	// Prepare container spec
+	containerSpec := corev1.ContainerArgs{
+		Name:            pulumi.String("execution"),
+		Image:           args.Image,
+		ImagePullPolicy: args.ImagePullPolicy,
+		Command:         createExecutionClientCommand(args),
+		Ports: corev1.ContainerPortArray{
+			corev1.ContainerPortArgs{
+				Name:          pulumi.String("p2p"),
+				ContainerPort: args.P2PPort,
+				Protocol:      pulumi.String("TCP"),
+			},
+			corev1.ContainerPortArgs{
+				Name:          pulumi.String("discovery"),
+				ContainerPort: args.DiscoveryPort,
+				Protocol:      pulumi.String("UDP"),
+			},
+			corev1.ContainerPortArgs{
+				Name:          pulumi.String("rpc"),
+				ContainerPort: args.RPCPort,
+			},
+			corev1.ContainerPortArgs{
+				Name:          pulumi.String("ws"),
+				ContainerPort: args.WSPort,
+			},
+			corev1.ContainerPortArgs{
+				Name:          pulumi.String("metrics"),
+				ContainerPort: args.MetricsPort,
+			},
+			corev1.ContainerPortArgs{
+				Name:          pulumi.String("auth-rpc"),
+				ContainerPort: args.AuthRPCPort,
+			},
+		},
+		VolumeMounts: corev1.VolumeMountArray{
+			corev1.VolumeMountArgs{
+				Name:      pulumi.String("data"),
+				MountPath: pulumi.String("/data"),
+			},
+			corev1.VolumeMountArgs{
+				Name:      pulumi.String("jwt"),
+				MountPath: pulumi.String("/jwt"),
+			},
+		},
+		Resources: nil,
+	}
+
+	// Add EnvFrom only if ConfigMap exists
+	if configMap != nil {
+		containerSpec.EnvFrom = corev1.EnvFromSourceArray{
+			&corev1.EnvFromSourceArgs{
+				ConfigMapRef: &corev1.ConfigMapEnvSourceArgs{
+					Name: configMap.Metadata.Name(),
+				},
+			},
+		}
+	}
+
 	component.StatefulSet, err = appsv1.NewStatefulSet(ctx, statefulSetName, &appsv1.StatefulSetArgs{
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(statefulSetName),
@@ -164,51 +241,7 @@ func NewExecutionClient(ctx *pulumi.Context, args *ExecutionClientArgs, opts ...
 				},
 				Spec: &corev1.PodSpecArgs{
 					Containers: corev1.ContainerArray{
-						corev1.ContainerArgs{
-							Name:            pulumi.String("execution"),
-							Image:           args.Image,
-							ImagePullPolicy: args.ImagePullPolicy,
-							Command:         createExecutionClientCommand(args),
-							Ports: corev1.ContainerPortArray{
-								corev1.ContainerPortArgs{
-									Name:          pulumi.String("p2p"),
-									ContainerPort: args.P2PPort,
-									Protocol:      pulumi.String("TCP"),
-								},
-								corev1.ContainerPortArgs{
-									Name:          pulumi.String("discovery"),
-									ContainerPort: args.DiscoveryPort,
-									Protocol:      pulumi.String("UDP"),
-								},
-								corev1.ContainerPortArgs{
-									Name:          pulumi.String("rpc"),
-									ContainerPort: args.RPCPort,
-								},
-								corev1.ContainerPortArgs{
-									Name:          pulumi.String("ws"),
-									ContainerPort: args.WSPort,
-								},
-								corev1.ContainerPortArgs{
-									Name:          pulumi.String("metrics"),
-									ContainerPort: args.MetricsPort,
-								},
-								corev1.ContainerPortArgs{
-									Name:          pulumi.String("auth-rpc"),
-									ContainerPort: args.AuthRPCPort,
-								},
-							},
-							VolumeMounts: corev1.VolumeMountArray{
-								corev1.VolumeMountArgs{
-									Name:      pulumi.String("data"),
-									MountPath: pulumi.String("/data"),
-								},
-								corev1.VolumeMountArgs{
-									Name:      pulumi.String("jwt"),
-									MountPath: pulumi.String("/jwt"),
-								},
-							},
-							Resources: nil,
-						},
+						containerSpec,
 					},
 					Volumes: corev1.VolumeArray{
 						corev1.VolumeArgs{
