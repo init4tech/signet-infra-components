@@ -83,12 +83,8 @@ func validateEnv(env *Env) error {
 		return fmt.Errorf("awsRegion is required")
 	}
 
-	if env.PostgresUser == nil {
-		return fmt.Errorf("postgresUser is required")
-	}
-
-	if env.PostgresPassword == nil {
-		return fmt.Errorf("postgresPassword is required")
+	if env.PylonDbUrl == nil {
+		return fmt.Errorf("pylonDbUrl is required")
 	}
 
 	return nil
