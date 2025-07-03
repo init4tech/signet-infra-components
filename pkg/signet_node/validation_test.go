@@ -3,7 +3,6 @@ package signet_node
 import (
 	"testing"
 
-	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,40 +10,40 @@ func TestSignetNodeComponentArgsValidate(t *testing.T) {
 	// Test with valid args
 	validArgs := SignetNodeComponentArgs{
 		Name:      "test-node",
-		Namespace: pulumi.String("default"),
+		Namespace: "default",
 		Env: SignetNodeEnv{
-			HostZenithAddress:             pulumi.String("0x123"),
-			RuOrdersContractAddress:       pulumi.String("0x789"),
-			HostOrdersContractAddress:     pulumi.String("0x456"),
-			SignetChainId:                 pulumi.String("123"),
-			BlobExplorerUrl:               pulumi.String("http://explorer"),
-			SignetStaticPath:              pulumi.String("/static"),
-			SignetDatabasePath:            pulumi.String("/db"),
-			RustLog:                       pulumi.String("info"),
-			IpcEndpoint:                   pulumi.String("/tmp/reth.ipc"),
-			RpcPort:                       pulumi.String("8545"),
-			WsRpcPort:                     pulumi.String("8546"),
-			TxForwardUrl:                  pulumi.String("http://forward"),
-			GenesisJsonPath:               pulumi.String("/genesis.json"),
-			HostZenithDeployHeight:        pulumi.String("1000"),
-			BaseFeeRecipient:              pulumi.String("0xabc"),
-			HostPassageContractAddress:    pulumi.String("0xdef"),
-			HostTransactorContractAddress: pulumi.String("0x321"),
-			RuPassageContractAddress:      pulumi.String("0x654"),
-			SignetClUrl:                   pulumi.String("http://cl"),
-			SignetPylonUrl:                pulumi.String("http://pylon"),
-			HostStartTimestamp:            pulumi.String("123456789"),
-			HostSlotOffset:                pulumi.String("0"),
-			HostSlotDuration:              pulumi.String("12"),
+			HostZenithAddress:             "0x123",
+			RuOrdersContractAddress:       "0x789",
+			HostOrdersContractAddress:     "0x456",
+			SignetChainId:                 123,
+			BlobExplorerUrl:               "http://explorer",
+			SignetStaticPath:              "/static",
+			SignetDatabasePath:            "/db",
+			RustLog:                       "info",
+			IpcEndpoint:                   "/tmp/reth.ipc",
+			RpcPort:                       8545,
+			WsRpcPort:                     8546,
+			TxForwardUrl:                  "http://forward",
+			GenesisJsonPath:               "/genesis.json",
+			HostZenithDeployHeight:        "1000",
+			BaseFeeRecipient:              "0xabc",
+			HostPassageContractAddress:    "0xdef",
+			HostTransactorContractAddress: "0x321",
+			RuPassageContractAddress:      "0x654",
+			SignetClUrl:                   "http://cl",
+			SignetPylonUrl:                "http://pylon",
+			HostStartTimestamp:            123456789,
+			HostSlotOffset:                1,
+			HostSlotDuration:              12,
 		},
-		ExecutionJwt:                pulumi.String("jwt-token"),
-		LighthousePvcSize:           pulumi.String("100Gi"),
-		RollupPvcSize:               pulumi.String("50Gi"),
-		ExecutionClientImage:        pulumi.String("execution:latest"),
-		ConsensusClientImage:        pulumi.String("consensus:latest"),
-		ExecutionClientStartCommand: pulumi.StringArray{pulumi.String("./start-execution")},
-		ConsensusClientStartCommand: pulumi.StringArray{pulumi.String("./start-consensus")},
-		AppLabels:                   AppLabels{Labels: pulumi.StringMap{"app": pulumi.String("test")}},
+		ExecutionJwt:                "jwt-token",
+		LighthousePvcSize:           "100Gi",
+		RollupPvcSize:               "50Gi",
+		ExecutionClientImage:        "execution:latest",
+		ConsensusClientImage:        "consensus:latest",
+		ExecutionClientStartCommand: []string{"./start-execution"},
+		ConsensusClientStartCommand: []string{"./start-consensus"},
+		AppLabels:                   AppLabels{}, // Labels not needed for validation
 	}
 
 	err := validArgs.Validate()
@@ -52,7 +51,7 @@ func TestSignetNodeComponentArgsValidate(t *testing.T) {
 
 	// Test with missing name
 	invalidArgs1 := SignetNodeComponentArgs{
-		Namespace:                   pulumi.String("default"),
+		Namespace:                   "default",
 		Env:                         validArgs.Env,
 		ExecutionJwt:                validArgs.ExecutionJwt,
 		LighthousePvcSize:           validArgs.LighthousePvcSize,
@@ -87,7 +86,7 @@ func TestSignetNodeComponentArgsValidate(t *testing.T) {
 	// Test with missing execution jwt
 	invalidArgs3 := SignetNodeComponentArgs{
 		Name:                        "test-node",
-		Namespace:                   pulumi.String("default"),
+		Namespace:                   "default",
 		Env:                         validArgs.Env,
 		LighthousePvcSize:           validArgs.LighthousePvcSize,
 		RollupPvcSize:               validArgs.RollupPvcSize,
@@ -104,7 +103,7 @@ func TestSignetNodeComponentArgsValidate(t *testing.T) {
 	// Test with invalid env
 	invalidArgs4 := SignetNodeComponentArgs{
 		Name:                        "test-node",
-		Namespace:                   pulumi.String("default"),
+		Namespace:                   "default",
 		ExecutionJwt:                validArgs.ExecutionJwt,
 		LighthousePvcSize:           validArgs.LighthousePvcSize,
 		RollupPvcSize:               validArgs.RollupPvcSize,
@@ -112,9 +111,7 @@ func TestSignetNodeComponentArgsValidate(t *testing.T) {
 		ConsensusClientImage:        validArgs.ConsensusClientImage,
 		ExecutionClientStartCommand: validArgs.ExecutionClientStartCommand,
 		ConsensusClientStartCommand: validArgs.ConsensusClientStartCommand,
-		Env:                         SignetNodeEnv{
-			// Missing required fields
-		},
+		Env:                         SignetNodeEnv{}, // Missing required fields
 	}
 
 	err = invalidArgs4.Validate()
