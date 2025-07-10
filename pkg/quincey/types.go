@@ -63,14 +63,14 @@ type quinceyComponentArgsInternal struct {
 
 // Public-facing environment struct with base Go types
 type QuinceyEnv struct {
-	QuinceyPort              int    `pulumi:"quinceyPort" validate:"required"`
+	QuinceyPort              string `pulumi:"quinceyPort" validate:"required"`
 	QuinceyKeyId             string `pulumi:"quinceyKeyId" validate:"required"`
 	AwsAccessKeyId           string `pulumi:"awsAccessKeyId" validate:"required"`
 	AwsSecretAccessKey       string `pulumi:"awsSecretAccessKey" validate:"required"`
 	AwsDefaultRegion         string `pulumi:"awsDefaultRegion" validate:"required"`
-	BlockQueryStart          int    `pulumi:"blockQueryStart" validate:"required"`
-	BlockQueryCutoff         int    `pulumi:"blockQueryCutoff" validate:"required"`
-	ChainOffset              int    `pulumi:"chainOffset" validate:"required"`
+	BlockQueryStart          string `pulumi:"blockQueryStart" validate:"required"`
+	BlockQueryCutoff         string `pulumi:"blockQueryCutoff" validate:"required"`
+	ChainOffset              string `pulumi:"chainOffset" validate:"required"`
 	HostRpcUrl               string `pulumi:"hostRpcUrl" validate:"required"`
 	OauthIssuer              string `pulumi:"oauthIssuer" validate:"required"`
 	OauthJwksUri             string `pulumi:"oauthJwksUri" validate:"required"`
@@ -113,14 +113,14 @@ func (args QuinceyComponentArgs) toInternal() quinceyComponentArgsInternal {
 // Conversion function to convert public env to internal env
 func (e QuinceyEnv) toInternal() quinceyEnvInternal {
 	return quinceyEnvInternal{
-		QuinceyPort:              pulumi.String(strconv.Itoa(e.QuinceyPort)),
+		QuinceyPort:              pulumi.String(e.QuinceyPort),
 		QuinceyKeyId:             pulumi.String(e.QuinceyKeyId),
 		AwsAccessKeyId:           pulumi.String(e.AwsAccessKeyId),
 		AwsSecretAccessKey:       pulumi.String(e.AwsSecretAccessKey),
 		AwsDefaultRegion:         pulumi.String(e.AwsDefaultRegion),
-		BlockQueryStart:          pulumi.String(strconv.Itoa(e.BlockQueryStart)),
-		BlockQueryCutoff:         pulumi.String(strconv.Itoa(e.BlockQueryCutoff)),
-		ChainOffset:              pulumi.String(strconv.Itoa(e.ChainOffset)),
+		BlockQueryStart:          pulumi.String(e.BlockQueryStart),
+		BlockQueryCutoff:         pulumi.String(e.BlockQueryCutoff),
+		ChainOffset:              pulumi.String(e.ChainOffset),
 		HostRpcUrl:               pulumi.String(e.HostRpcUrl),
 		OauthIssuer:              pulumi.String(e.OauthIssuer),
 		OauthJwksUri:             pulumi.String(e.OauthJwksUri),

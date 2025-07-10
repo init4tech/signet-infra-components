@@ -21,7 +21,7 @@ import (
 //	    Namespace: pulumi.String("default"),
 //	    Image:     pulumi.String("quincey:latest"),
 //	    Env: QuinceyEnv{
-//	        QuinceyPort: pulumi.String("8080"),
+//	        QuinceyPort: "8080",
 //	        // ... other environment variables
 //	    },
 //	})
