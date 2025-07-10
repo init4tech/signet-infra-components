@@ -3,7 +3,6 @@ package quincey
 import (
 	"testing"
 
-	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,28 +21,29 @@ func TestQuinceyComponentArgsValidate(t *testing.T) {
 		{
 			name: "missing image",
 			args: QuinceyComponentArgs{
-				Namespace: pulumi.String("test-namespace"),
+				Namespace: "test-namespace",
 			},
 			wantErr: "image is required",
 		},
 		{
 			name: "missing virtual service hosts",
 			args: QuinceyComponentArgs{
-				Namespace: pulumi.String("test-namespace"),
-				Image:     pulumi.String("test-image:latest"),
+				Namespace: "test-namespace",
+				Image:     "test-image:latest",
+				Port:      8080,
 				Env: QuinceyEnv{
-					QuinceyPort:        pulumi.String("8080"),
-					QuinceyKeyId:       pulumi.String("test-key-id"),
-					AwsAccessKeyId:     pulumi.String("test-access-key"),
-					AwsSecretAccessKey: pulumi.String("test-secret-key"),
-					AwsDefaultRegion:   pulumi.String("us-west-2"),
-					BlockQueryStart:    pulumi.String("1000"),
-					BlockQueryCutoff:   pulumi.String("2000"),
-					ChainOffset:        pulumi.String("10"),
-					HostRpcUrl:         pulumi.String("http://host-rpc"),
-					OauthIssuer:        pulumi.String("https://issuer"),
-					OauthJwksUri:       pulumi.String("https://jwks"),
-					QuinceyBuilders:    pulumi.String("builder1,builder2"),
+					QuinceyPort:        8080,
+					QuinceyKeyId:       "test-key-id",
+					AwsAccessKeyId:     "test-access-key",
+					AwsSecretAccessKey: "test-secret-key",
+					AwsDefaultRegion:   "us-west-2",
+					BlockQueryStart:    1000,
+					BlockQueryCutoff:   2000,
+					ChainOffset:        10,
+					HostRpcUrl:         "http://host-rpc",
+					OauthIssuer:        "https://issuer",
+					OauthJwksUri:       "https://jwks",
+					QuinceyBuilders:    "builder1,builder2",
 				},
 			},
 			wantErr: "virtual service hosts is required",
@@ -61,9 +61,10 @@ func TestQuinceyComponentArgsValidate(t *testing.T) {
 	// Test with valid args but empty QuinceyEnv
 	t.Run("valid args but empty QuinceyEnv", func(t *testing.T) {
 		args := QuinceyComponentArgs{
-			Namespace:           pulumi.String("test-namespace"),
-			Image:               pulumi.String("test-image:latest"),
-			VirtualServiceHosts: pulumi.StringArray{pulumi.String("example.com")},
+			Namespace:           "test-namespace",
+			Image:               "test-image:latest",
+			Port:                8080,
+			VirtualServiceHosts: []string{"example.com"},
 		}
 		err := args.Validate()
 		assert.Error(t, err)
@@ -73,26 +74,27 @@ func TestQuinceyComponentArgsValidate(t *testing.T) {
 	// Test with valid args and complete QuinceyEnv
 	t.Run("valid args with complete QuinceyEnv", func(t *testing.T) {
 		args := QuinceyComponentArgs{
-			Namespace:           pulumi.String("test-namespace"),
-			Image:               pulumi.String("test-image:latest"),
-			VirtualServiceHosts: pulumi.StringArray{pulumi.String("example.com")},
+			Namespace:           "test-namespace",
+			Image:               "test-image:latest",
+			Port:                8080,
+			VirtualServiceHosts: []string{"example.com"},
 			Env: QuinceyEnv{
-				QuinceyPort:        pulumi.String("8080"),
-				QuinceyKeyId:       pulumi.String("test-key-id"),
-				AwsAccessKeyId:     pulumi.String("test-access-key"),
-				AwsSecretAccessKey: pulumi.String("test-secret-key"),
-				AwsDefaultRegion:   pulumi.String("us-west-2"),
-				BlockQueryStart:    pulumi.String("1000"),
-				BlockQueryCutoff:   pulumi.String("2000"),
-				ChainOffset:        pulumi.String("10"),
-				HostRpcUrl:         pulumi.String("http://host-rpc"),
-				OauthIssuer:        pulumi.String("https://issuer"),
-				OauthJwksUri:       pulumi.String("https://jwks"),
-				QuinceyBuilders:    pulumi.String("builder1,builder2"),
+				QuinceyPort:        8080,
+				QuinceyKeyId:       "test-key-id",
+				AwsAccessKeyId:     "test-access-key",
+				AwsSecretAccessKey: "test-secret-key",
+				AwsDefaultRegion:   "us-west-2",
+				BlockQueryStart:    1000,
+				BlockQueryCutoff:   2000,
+				ChainOffset:        10,
+				HostRpcUrl:         "http://host-rpc",
+				OauthIssuer:        "https://issuer",
+				OauthJwksUri:       "https://jwks",
+				QuinceyBuilders:    "builder1,builder2",
 				// Optional fields
-				OtelExporterOtlpEndpoint: pulumi.String("http://otel"),
-				OtelExporterOtlpProtocol: pulumi.String("grpc"),
-				RustLog:                  pulumi.String("info"),
+				OtelExporterOtlpEndpoint: "http://otel",
+				OtelExporterOtlpProtocol: "grpc",
+				RustLog:                  "info",
 			},
 		}
 		err := args.Validate()

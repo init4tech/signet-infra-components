@@ -7,46 +7,118 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+// Public-facing structs with base Go types
+
 // ExecutionClientArgs contains the configuration for an execution client
 type ExecutionClientArgs struct {
 	// Name is the base name for all resources
-	Name pulumi.StringInput `pulumi:"name"`
+	Name string
 	// Namespace is the Kubernetes namespace to deploy resources in
-	Namespace pulumi.StringInput `pulumi:"namespace"`
+	Namespace string
 	// StorageSize is the size of the persistent volume claim
-	StorageSize pulumi.StringInput `pulumi:"storageSize"`
+	StorageSize string
 	// StorageClass is the Kubernetes storage class to use
-	StorageClass pulumi.StringInput `pulumi:"storageClass"`
+	StorageClass string
 	// Image is the container image to use
-	Image pulumi.StringInput `pulumi:"image"`
+	Image string
 	// ImagePullPolicy is the Kubernetes image pull policy
-	ImagePullPolicy pulumi.StringInput `pulumi:"imagePullPolicy"`
+	ImagePullPolicy string
 	// Resources contains the resource requests and limits
-	Resources *corev1.ResourceRequirements `pulumi:"resources,optional"`
+	Resources *corev1.ResourceRequirements
 	// NodeSelector is the Kubernetes node selector
-	NodeSelector pulumi.StringMap `pulumi:"nodeSelector,optional"`
+	NodeSelector pulumi.StringMap
 	// Tolerations are the Kubernetes tolerations
-	Tolerations corev1.TolerationArray `pulumi:"tolerations,optional"`
+	Tolerations corev1.TolerationArray
 	// JWTSecret is the JWT secret for authentication
-	JWTSecret pulumi.StringInput `pulumi:"jwtSecret"`
+	JWTSecret string
 	// P2PPort is the port for P2P communication
-	P2PPort pulumi.IntInput `pulumi:"p2pPort"`
+	P2PPort int
 	// RPCPort is the port for RPC communication
-	RPCPort pulumi.IntInput `pulumi:"rpcPort"`
+	RPCPort int
 	// WSPort is the port for WebSocket communication
-	WSPort pulumi.IntInput `pulumi:"wsPort"`
+	WSPort int
 	// MetricsPort is the port for metrics
-	MetricsPort pulumi.IntInput `pulumi:"metricsPort"`
+	MetricsPort int
 	// AuthRPCPort is the port for authenticated RPC
-	AuthRPCPort pulumi.IntInput `pulumi:"authRpcPort"`
+	AuthRPCPort int
 	// DiscoveryPort is the port for node discovery
-	DiscoveryPort pulumi.IntInput `pulumi:"discoveryPort"`
+	DiscoveryPort int
 	// Bootnodes is a list of bootnode URLs
-	Bootnodes pulumi.StringArray `pulumi:"bootnodes,optional"`
+	Bootnodes []string
 	// AdditionalArgs are additional command line arguments
-	AdditionalArgs pulumi.StringArray `pulumi:"additionalArgs,optional"`
-	// Environment variables
-	ExecutionClientEnv ExecutionClientEnv `pulumi:"executionClientEnv,optional"`
+	AdditionalArgs []string
+	// Environment variables for the execution client, accepts a generic type that implements the utils.EnvProvider interface
+	ExecutionClientEnv utils.EnvProvider
+}
+
+// Internal structs with Pulumi types
+
+type executionClientArgsInternal struct {
+	// Name is the base name for all resources
+	Name pulumi.StringInput
+	// Namespace is the Kubernetes namespace to deploy resources in
+	Namespace pulumi.StringInput
+	// StorageSize is the size of the persistent volume claim
+	StorageSize pulumi.StringInput
+	// StorageClass is the Kubernetes storage class to use
+	StorageClass pulumi.StringInput
+	// Image is the container image to use
+	Image pulumi.StringInput
+	// ImagePullPolicy is the Kubernetes image pull policy
+	ImagePullPolicy pulumi.StringInput
+	// Resources contains the resource requests and limits
+	Resources *corev1.ResourceRequirements
+	// NodeSelector is the Kubernetes node selector
+	NodeSelector pulumi.StringMap
+	// Tolerations are the Kubernetes tolerations
+	Tolerations corev1.TolerationArray
+	// JWTSecret is the JWT secret for authentication
+	JWTSecret pulumi.StringInput
+	// P2PPort is the port for P2P communication
+	P2PPort pulumi.IntInput
+	// RPCPort is the port for RPC communication
+	RPCPort pulumi.IntInput
+	// WSPort is the port for WebSocket communication
+	WSPort pulumi.IntInput
+	// MetricsPort is the port for metrics
+	MetricsPort pulumi.IntInput
+	// AuthRPCPort is the port for authenticated RPC
+	AuthRPCPort pulumi.IntInput
+	// DiscoveryPort is the port for node discovery
+	DiscoveryPort pulumi.IntInput
+	// Bootnodes is a list of bootnode URLs
+	Bootnodes pulumi.StringArray
+	// AdditionalArgs are additional command line arguments
+	AdditionalArgs pulumi.StringArray
+	// Environment variables for the execution client, accepts a generic type that implements the utils.EnvProvider interface
+	ExecutionClientEnv utils.EnvProvider
+}
+
+// Conversion functions
+
+// toInternal converts public args to internal args for use with Pulumi
+func (args ExecutionClientArgs) toInternal() executionClientArgsInternal {
+	return executionClientArgsInternal{
+		Name:               pulumi.String(args.Name),
+		Namespace:          pulumi.String(args.Namespace),
+		StorageSize:        pulumi.String(args.StorageSize),
+		StorageClass:       pulumi.String(args.StorageClass),
+		Image:              pulumi.String(args.Image),
+		ImagePullPolicy:    pulumi.String(args.ImagePullPolicy),
+		Resources:          args.Resources,
+		NodeSelector:       args.NodeSelector,
+		Tolerations:        args.Tolerations,
+		JWTSecret:          pulumi.String(args.JWTSecret),
+		P2PPort:            pulumi.Int(args.P2PPort),
+		RPCPort:            pulumi.Int(args.RPCPort),
+		WSPort:             pulumi.Int(args.WSPort),
+		MetricsPort:        pulumi.Int(args.MetricsPort),
+		AuthRPCPort:        pulumi.Int(args.AuthRPCPort),
+		DiscoveryPort:      pulumi.Int(args.DiscoveryPort),
+		Bootnodes:          pulumi.ToStringArray(args.Bootnodes),
+		AdditionalArgs:     pulumi.ToStringArray(args.AdditionalArgs),
+		ExecutionClientEnv: args.ExecutionClientEnv,
+	}
 }
 
 // ExecutionClientComponent represents an execution client deployment
@@ -69,59 +141,4 @@ type ExecutionClientComponent struct {
 	RPCService *corev1.Service
 	// StatefulSet is the stateful set
 	StatefulSet *appsv1.StatefulSet
-}
-
-// ExecutionClientEnv contains environment variables for the execution client
-type ExecutionClientEnv struct {
-	// HOST_ZENITH_CONTRACT_ADDRESS - The address of the Host Zenith contract
-	HostZenithContractAddress pulumi.StringInput `pulumi:"hostZenithContractAddress"`
-	// RU_ORDERS_CONTRACT_ADDRESS - The address of the Rollup Orders contract
-	RuOrdersContractAddress pulumi.StringInput `pulumi:"ruOrdersContractAddress"`
-	// HOST_ORDERS_CONTRACT_ADDRESS - The address of the Host Orders contract
-	HostOrdersContractAddress pulumi.StringInput `pulumi:"hostOrdersContractAddress"`
-	// SIGNET_CHAIN_ID - The chain ID of the Signet network
-	SignetChainID pulumi.StringInput `pulumi:"signetChainID"`
-	// BLOB_EXPLORER_URL - The URL of the Blob Explorer
-	BlobExplorerUrl pulumi.StringInput `pulumi:"blobExplorerUrl"`
-	// SIGNET_STATIC_PATH - The path to the Signet static files
-	SignetStaticPath pulumi.StringInput `pulumi:"signetStaticPath"`
-	// SIGNET_DATABASE_PATH - The path to the Signet database
-	SignetDatabasePath pulumi.StringInput `pulumi:"signetDatabasePath"`
-	// RUST_LOG - The log level for the signet node
-	RustLog pulumi.StringInput `pulumi:"rustLog"`
-	// IPC_ENDPOINT - The IPC endpoint for the Signet client
-	IpcEndpoint pulumi.StringInput `pulumi:"ipcEndpoint"`
-	// RPC_PORT - The port for the JSON RPC service
-	RpcPort pulumi.StringInput `pulumi:"rpcPort"`
-	// WS_RPC_PORT - The port for the WebSocket RPC service
-	WsRpcPort pulumi.StringInput `pulumi:"wsRpcPort"`
-	// TX_FORWARD_URL - The URL for the transaction forwarder to send transactions to
-	TxForwardUrl pulumi.StringInput `pulumi:"txForwardUrl"`
-	// GENESIS_JSON_PATH - The path to the genesis JSON file
-	GenesisJsonPath pulumi.StringInput `pulumi:"genesisJsonPath"`
-	// HOST_ZENITH_DEPLOY_HEIGHT - The height of the Host Zenith contract deployment
-	HostZenithDeployHeight pulumi.StringInput `pulumi:"hostZenithDeployHeight"`
-	// BASE_FEE_RECIPIENT - The address of the base fee recipient
-	BaseFeeRecipient pulumi.StringInput `pulumi:"baseFeeRecipient"`
-	// HOST_PASSAGE_CONTRACT_ADDRESS - The address of the Host Passage contract
-	HostPassageContractAddress pulumi.StringInput `pulumi:"hostPassageContractAddress"`
-	// HOST_TRANSACTOR_CONTRACT_ADDRESS - The address of the Host Transactor contract
-	HostTransactorContractAddress pulumi.StringInput `pulumi:"hostTransactorContractAddress"`
-	// RU_PASSAGE_CONTRACT_ADDRESS - The address of the Rollup Passage contract
-	RuPassageContractAddress pulumi.StringInput `pulumi:"ruPassageContractAddress"`
-	// SIGNET_CL_URL - The URL of the consensus client http api to fetch blobs
-	SignetClUrl pulumi.StringInput `pulumi:"signetClUrl"`
-	// SIGNET_PYLON_URL - The URL of the pylon api to fetch blobs
-	SignetPylonUrl pulumi.StringInput `pulumi:"signetPylonUrl"`
-	// START_TIMESTAMP - The start timestamp for the signet node in epoch time
-	StartTimestamp pulumi.StringInput `pulumi:"startTimestamp"`
-	// SLOT_OFFSET - The slot offset for signet node in seconds
-	SlotOffset pulumi.StringInput `pulumi:"slotOffset"`
-	// SLOT_DURATION - The slot duration for the signet node in seconds
-	SlotDuration pulumi.StringInput `pulumi:"slotDuration"`
-}
-
-// GetEnvMap implements the utils.EnvProvider interface
-func (e ExecutionClientEnv) GetEnvMap() pulumi.StringMap {
-	return utils.CreateEnvMap(e)
 }

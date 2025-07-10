@@ -7,6 +7,8 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+// Public-facing structs with base Go types
+
 // IAMStatement represents a statement in an IAM policy document.
 // It defines a single permission statement that specifies what actions
 // are allowed or denied on which resources.
@@ -41,7 +43,7 @@ type KMSStatement struct {
 	// Action specifies the KMS actions that are allowed or denied
 	Action []string `json:"Action"`
 	// Resource specifies the KMS key ARN that the permissions apply to
-	Resource pulumi.StringInput `json:"Resource"`
+	Resource string `json:"Resource"`
 }
 
 // KMSPolicy represents a complete KMS policy document.
@@ -51,4 +53,40 @@ type KMSPolicy struct {
 	Version string `json:"Version"`
 	// Statement contains the list of KMS permission statements
 	Statement []KMSStatement `json:"Statement"`
+}
+
+// Internal structs with Pulumi types
+
+type kmsStatementInternal struct {
+	Effect   string             `json:"Effect"`
+	Action   []string           `json:"Action"`
+	Resource pulumi.StringInput `json:"Resource"`
+}
+
+type kmsPolicyInternal struct {
+	Version   string                 `json:"Version"`
+	Statement []kmsStatementInternal `json:"Statement"`
+}
+
+// Conversion functions
+
+// toInternal converts a public KMSStatement to internal format
+func (s KMSStatement) toInternal() kmsStatementInternal {
+	return kmsStatementInternal{
+		Effect:   s.Effect,
+		Action:   s.Action,
+		Resource: pulumi.String(s.Resource),
+	}
+}
+
+// toInternal converts a public KMSPolicy to internal format
+func (p KMSPolicy) toInternal() kmsPolicyInternal {
+	statements := make([]kmsStatementInternal, len(p.Statement))
+	for i, stmt := range p.Statement {
+		statements[i] = stmt.toInternal()
+	}
+	return kmsPolicyInternal{
+		Version:   p.Version,
+		Statement: statements,
+	}
 }
