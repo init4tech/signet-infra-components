@@ -16,6 +16,9 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		return nil, fmt.Errorf("invalid signet node component args: %w", err)
 	}
 
+	// Convert public args to internal args for use with Pulumi
+	internalArgs := args.toInternal()
+
 	component := &SignetNodeComponent{
 		SignetNodeComponentArgs: args,
 	}
@@ -29,7 +32,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	_, err = CreatePersistentVolumeClaim(
 		ctx,
 		"signet-node-data",
-		args.Namespace,
+		internalArgs.Namespace,
 		storageSize,
 		"aws-gp3",
 		component,
@@ -41,7 +44,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	_, err = CreatePersistentVolumeClaim(
 		ctx,
 		"rollup-data",
-		args.Namespace,
+		internalArgs.Namespace,
 		storageSize,
 		"aws-gp3",
 		component,
@@ -53,11 +56,11 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	secretName := "execution-jwt"
 	secret, err := corev1.NewSecret(ctx, secretName, &corev1.SecretArgs{
 		StringData: pulumi.StringMap{
-			"jwt.hex": args.ExecutionJwt,
+			"jwt.hex": internalArgs.ExecutionJwt,
 		},
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(secretName),
-			Namespace: args.Namespace,
+			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, secretName, args.Name, nil),
 		},
 	})
@@ -70,9 +73,9 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	executionConfigMap, err := utils.CreateConfigMap(
 		ctx,
 		executionConfigMapName,
-		args.Namespace,
+		internalArgs.Namespace,
 		utils.CreateResourceLabels(args.Name, executionConfigMapName, args.Name, nil),
-		args.Env,
+		internalArgs.Env,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create execution configmap: %w", err)
@@ -124,7 +127,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		},
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(executionClientServiceName),
-			Namespace: args.Namespace,
+			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, executionClientServiceName, args.Name, nil),
 		},
 	}, pulumi.Parent(component))
@@ -147,7 +150,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(hostStatefulSetName),
 			Labels:    utils.CreateResourceLabels(args.Name, hostStatefulSetResourceName, args.Name, nil),
-			Namespace: args.Namespace,
+			Namespace: internalArgs.Namespace,
 		},
 		Spec: &appsv1.StatefulSetSpecArgs{
 			Replicas: pulumi.Int(1),
@@ -159,13 +162,13 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 			Template: &corev1.PodTemplateSpecArgs{
 				Metadata: &metav1.ObjectMetaArgs{
 					Labels:    executionPodLabels,
-					Namespace: args.Namespace,
+					Namespace: internalArgs.Namespace,
 				},
 				Spec: &corev1.PodSpecArgs{
 					Containers: corev1.ContainerArray{
 						corev1.ContainerArgs{
 							Name:            pulumi.String(hostStatefulSetName),
-							Image:           args.ExecutionClientImage,
+							Image:           internalArgs.ExecutionClientImage,
 							ImagePullPolicy: pulumi.String("Always"),
 							Command: pulumi.StringArray{
 								pulumi.String("signet"),
@@ -282,7 +285,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	_, err = CreatePersistentVolumeClaim(
 		ctx,
 		"real-lighthouse-data",
-		args.Namespace,
+		internalArgs.Namespace,
 		storageSize,
 		"aws-gp3",
 		component,
@@ -293,16 +296,16 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 
 	// Create ConfigMap for consensus environment variables
 	consensusEnv := ConsensusEnv{
-		Example: pulumi.String("example"),
+		Example: "example",
 	}
 
 	consensusConfigMapName := "consensus-configmap-env-config"
 	consensusConfigMap, err := utils.CreateConfigMap(
 		ctx,
 		consensusConfigMapName,
-		args.Namespace,
+		internalArgs.Namespace,
 		utils.CreateResourceLabels(args.Name, consensusConfigMapName, args.Name, nil),
-		consensusEnv,
+		consensusEnv.toInternal(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create consensus configmap: %w", err)
@@ -350,7 +353,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		},
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(lighthouseServiceName),
-			Namespace: args.Namespace,
+			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, lighthouseServiceName, args.Name, nil),
 		},
 	}, pulumi.Parent(component))
@@ -371,7 +374,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(lighthouseStatefulSet),
 			Labels:    utils.CreateResourceLabels(args.Name, lighthouseStatefulSetResourceName, args.Name, nil),
-			Namespace: args.Namespace,
+			Namespace: internalArgs.Namespace,
 		},
 		Spec: &appsv1.StatefulSetSpecArgs{
 			Replicas: pulumi.Int(1),
@@ -382,14 +385,14 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 			},
 			Template: &corev1.PodTemplateSpecArgs{
 				Metadata: &metav1.ObjectMetaArgs{
-					Namespace: args.Namespace,
+					Namespace: internalArgs.Namespace,
 					Labels:    lighthousePodLabels,
 				},
 				Spec: &corev1.PodSpecArgs{
 					Containers: corev1.ContainerArray{
 						corev1.ContainerArgs{
 							Name:  pulumi.String(lighthouseStatefulSet),
-							Image: args.ConsensusClientImage,
+							Image: internalArgs.ConsensusClientImage,
 							Command: pulumi.StringArray{
 								pulumi.String("lighthouse"),
 								pulumi.String("beacon_node"),
@@ -499,7 +502,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		Kind:       pulumi.String("VirtualService"),
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String(virtualServiceName),
-			Namespace: args.Namespace,
+			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, virtualServiceName, args.Name, nil),
 		},
 		OtherFields: map[string]interface{}{
