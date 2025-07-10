@@ -11,6 +11,10 @@ import (
 )
 
 func NewPylonComponent(ctx *pulumi.Context, args *PylonComponentArgs, opts ...pulumi.ResourceOption) (*PylonComponent, error) {
+	if err := args.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid pylon component args: %w", err)
+	}
+
 	component := &PylonComponent{}
 
 	err := ctx.RegisterComponentResource("signet:index:Pylon", args.Name, component, opts...)
