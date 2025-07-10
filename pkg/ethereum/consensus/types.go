@@ -6,8 +6,30 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+// Public-facing structs with base Go types
+
 // ConsensusClientArgs represents the arguments for creating a consensus client
 type ConsensusClientArgs struct {
+	Name                    string
+	Namespace               string
+	StorageSize             string
+	StorageClass            string
+	Image                   string
+	ImagePullPolicy         string
+	JWTSecret               string
+	NodeSelector            pulumi.StringMap
+	Tolerations             corev1.TolerationArray
+	P2PPort                 int
+	BeaconAPIPort           int
+	MetricsPort             int
+	ExecutionClientEndpoint string
+	Bootnodes               []string
+	AdditionalArgs          []string
+}
+
+// Internal structs with Pulumi types
+
+type consensusClientArgsInternal struct {
 	Name                    pulumi.StringInput
 	Namespace               pulumi.StringInput
 	StorageSize             pulumi.StringInput
@@ -25,14 +47,37 @@ type ConsensusClientArgs struct {
 	AdditionalArgs          pulumi.StringArray
 }
 
+// Conversion functions
+
+// toInternal converts public args to internal args for use with Pulumi
+func (args ConsensusClientArgs) toInternal() consensusClientArgsInternal {
+	return consensusClientArgsInternal{
+		Name:                    pulumi.String(args.Name),
+		Namespace:               pulumi.String(args.Namespace),
+		StorageSize:             pulumi.String(args.StorageSize),
+		StorageClass:            pulumi.String(args.StorageClass),
+		Image:                   pulumi.String(args.Image),
+		ImagePullPolicy:         pulumi.String(args.ImagePullPolicy),
+		JWTSecret:               pulumi.String(args.JWTSecret),
+		NodeSelector:            args.NodeSelector,
+		Tolerations:             args.Tolerations,
+		P2PPort:                 pulumi.Int(args.P2PPort),
+		BeaconAPIPort:           pulumi.Int(args.BeaconAPIPort),
+		MetricsPort:             pulumi.Int(args.MetricsPort),
+		ExecutionClientEndpoint: pulumi.String(args.ExecutionClientEndpoint),
+		Bootnodes:               pulumi.ToStringArray(args.Bootnodes),
+		AdditionalArgs:          pulumi.ToStringArray(args.AdditionalArgs),
+	}
+}
+
 // ConsensusClientComponent represents a consensus client deployment
 type ConsensusClientComponent struct {
 	pulumi.ResourceState
 
 	// Name is the base name for all resources
-	Name pulumi.StringOutput
+	Name string
 	// Namespace is the Kubernetes namespace
-	Namespace pulumi.StringOutput
+	Namespace string
 	// PVC is the persistent volume claim
 	PVC *corev1.PersistentVolumeClaim
 	// JWTSecret is the JWT secret
