@@ -27,13 +27,11 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		return nil, fmt.Errorf("failed to register component resource: %w", err)
 	}
 
-	storageSize := pulumi.String("150Gi")
-
 	_, err = CreatePersistentVolumeClaim(
 		ctx,
 		"signet-node-data",
 		internalArgs.Namespace,
-		storageSize,
+		internalArgs.ExecutionPvcSize,
 		"aws-gp3",
 		component,
 	)
@@ -45,7 +43,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		ctx,
 		"rollup-data",
 		internalArgs.Namespace,
-		storageSize,
+		internalArgs.RollupPvcSize,
 		"aws-gp3",
 		component,
 	)
@@ -286,7 +284,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		ctx,
 		"real-lighthouse-data",
 		internalArgs.Namespace,
-		storageSize,
+		internalArgs.LighthousePvcSize,
 		"aws-gp3",
 		component,
 	)

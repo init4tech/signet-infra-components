@@ -21,6 +21,7 @@ type SignetNodeComponentArgs struct {
 	Namespace                   string
 	Env                         SignetNodeEnv
 	ExecutionJwt                string
+	ExecutionPvcSize            string
 	LighthousePvcSize           string
 	RollupPvcSize               string
 	ExecutionClientImage        string
@@ -36,6 +37,7 @@ type signetNodeComponentArgsInternal struct {
 	Namespace                   pulumi.StringInput
 	Env                         signetNodeEnvInternal
 	ExecutionJwt                pulumi.StringInput
+	ExecutionPvcSize            pulumi.StringInput
 	LighthousePvcSize           pulumi.StringInput
 	RollupPvcSize               pulumi.StringInput
 	ExecutionClientImage        pulumi.StringInput
@@ -122,6 +124,7 @@ func (args SignetNodeComponentArgs) toInternal() signetNodeComponentArgsInternal
 		Namespace:                   pulumi.String(args.Namespace),
 		Env:                         args.Env.toInternal(),
 		ExecutionJwt:                pulumi.String(args.ExecutionJwt),
+		ExecutionPvcSize:            pulumi.String(args.ExecutionPvcSize),
 		LighthousePvcSize:           pulumi.String(args.LighthousePvcSize),
 		RollupPvcSize:               pulumi.String(args.RollupPvcSize),
 		ExecutionClientImage:        pulumi.String(args.ExecutionClientImage),
