@@ -78,7 +78,7 @@ func NewQuinceyComponent(ctx *pulumi.Context, name string, args *QuinceyComponen
 	}
 
 	// Create authorization policy
-	authPolicy, err := createAuthorizationPolicy(ctx, component)
+	authPolicy, err := createAuthorizationPolicy(ctx, &internalArgs, component)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authorization policy: %w", err)
 	}
@@ -193,7 +193,7 @@ func createVirtualService(ctx *pulumi.Context, args *quinceyComponentArgsInterna
 	containerPortInt := utils.ParsePortWithDefault(args.Env.QuinceyPort, DefaultQuinceyPort)
 
 	// Get the service URL using the existing method
-	serviceURL := parent.GetServiceURL()
+	serviceURL := parent.GetServiceURL("quincey", args.Namespace)
 
 	return crd.NewCustomResource(ctx, "quincey-vservice", &crd.CustomResourceArgs{
 		ApiVersion: pulumi.String(IstioNetworkingAPIVersion),
@@ -275,7 +275,7 @@ func createRequestAuthentication(ctx *pulumi.Context, args *quinceyComponentArgs
 }
 
 // createAuthorizationPolicy creates the Istio authorization policy
-func createAuthorizationPolicy(ctx *pulumi.Context, parent *QuinceyComponent) (*crd.CustomResource, error) {
+func createAuthorizationPolicy(ctx *pulumi.Context, args *quinceyComponentArgsInternal, parent *QuinceyComponent) (*crd.CustomResource, error) {
 	labels := utils.CreateResourceLabels(ComponentName, ServiceName, DefaultAppSelector, nil)
 
 	return crd.NewCustomResource(ctx, "quincey-authorization-policy", &crd.CustomResourceArgs{
@@ -283,7 +283,7 @@ func createAuthorizationPolicy(ctx *pulumi.Context, parent *QuinceyComponent) (*
 		Kind:       pulumi.String(AuthorizationPolicyKind),
 		Metadata: &metav1.ObjectMetaArgs{
 			Name:      pulumi.String("quincey-jwt-auth-policy"),
-			Namespace: parent.Service.Metadata.Namespace(),
+			Namespace: args.Namespace,
 			Labels:    labels,
 		},
 		OtherFields: map[string]interface{}{
@@ -311,14 +311,11 @@ func createAuthorizationPolicy(ctx *pulumi.Context, parent *QuinceyComponent) (*
 }
 
 // GetServiceURL returns the URL of the builder service
-func (c *QuinceyComponent) GetServiceURL() pulumi.StringOutput {
-	return pulumi.Sprintf("http://%s.%s.svc.cluster.local", c.Service.Metadata.Name(), c.Service.Metadata.Namespace())
+func (c *QuinceyComponent) GetServiceURL(name string, namespace pulumi.StringInput) pulumi.StringOutput {
+	return pulumi.Sprintf("%s.%s.svc.cluster.local", name, namespace)
 }
 
 // GetMetricsURL returns the URL of the builder metrics endpoint
-func (c *QuinceyComponent) GetMetricsURL() pulumi.StringOutput {
-	return pulumi.Sprintf("http://%s.%s.svc.cluster.local:%d/metrics",
-		c.Service.Metadata.Name(),
-		c.Service.Metadata.Namespace(),
-		DefaultMetricsPort)
+func (c *QuinceyComponent) GetMetricsURL(name string, namespace pulumi.StringInput) pulumi.StringOutput {
+	return pulumi.Sprintf("http://%s.%s.svc.cluster.local:%d/metrics", name, namespace, DefaultMetricsPort)
 }

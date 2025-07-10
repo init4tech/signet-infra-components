@@ -139,9 +139,9 @@ func (e quinceyEnvInternal) GetEnvMap() pulumi.StringMap {
 // Quincey defines the interface for interacting with a Quincey deployment.
 type Quincey interface {
 	// GetServiceURL returns the internal Kubernetes service URL for the Quincey service
-	GetServiceURL() pulumi.StringOutput
+	GetServiceURL(name string, namespace pulumi.StringInput) pulumi.StringOutput
 	// GetMetricsURL returns the URL for accessing the metrics endpoint
-	GetMetricsURL() pulumi.StringOutput
+	GetMetricsURL(name string, namespace pulumi.StringInput) pulumi.StringOutput
 }
 
 // Ensure QuinceyComponent implements Quincey
