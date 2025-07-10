@@ -10,6 +10,10 @@ import (
 
 // NewEthereumNodeComponent creates a new Ethereum node component that combines an execution client and a consensus client
 func NewEthereumNodeComponent(ctx *pulumi.Context, args *EthereumNodeArgs, opts ...pulumi.ResourceOption) (*EthereumNodeComponent, error) {
+	if err := args.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid ethereum node args: %w", err)
+	}
+
 	component := &EthereumNodeComponent{
 		Name:      args.Name,
 		Namespace: args.Namespace,
