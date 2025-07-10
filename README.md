@@ -49,7 +49,7 @@ func main() {
     }
 
     // Export the service URL
-    ctx.Export("builderServiceUrl", builderComponent.GetServiceURL())
+    ctx.Export("builderServiceUrl", builderComponent.GetServiceURL("signet-builder", "signet"))
 }
 ```
 

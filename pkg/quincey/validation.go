@@ -26,8 +26,8 @@ func (args *QuinceyComponentArgs) Validate() error {
 
 // Validate validates the QuinceyEnv struct, ensuring all required fields are set
 func (env *QuinceyEnv) Validate() error {
-	if env.QuinceyPort <= 0 {
-		return fmt.Errorf("quincey port must be a positive integer")
+	if env.QuinceyPort == "" {
+		return fmt.Errorf("quincey port is required")
 	}
 	if env.QuinceyKeyId == "" {
 		return fmt.Errorf("quincey key ID is required")
@@ -41,14 +41,14 @@ func (env *QuinceyEnv) Validate() error {
 	if env.AwsDefaultRegion == "" {
 		return fmt.Errorf("AWS default region is required")
 	}
-	if env.BlockQueryStart <= 0 {
-		return fmt.Errorf("block query start must be a positive integer")
+	if env.BlockQueryStart == "" {
+		return fmt.Errorf("block query start is required")
 	}
-	if env.BlockQueryCutoff <= 0 {
-		return fmt.Errorf("block query cutoff must be a positive integer")
+	if env.BlockQueryCutoff == "" {
+		return fmt.Errorf("block query cutoff is required")
 	}
-	if env.ChainOffset <= 0 {
-		return fmt.Errorf("chain offset must be a positive integer")
+	if env.ChainOffset == "" {
+		return fmt.Errorf("chain offset is required")
 	}
 	if env.HostRpcUrl == "" {
 		return fmt.Errorf("host RPC URL is required")

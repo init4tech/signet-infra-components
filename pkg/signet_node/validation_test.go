@@ -37,6 +37,7 @@ func TestSignetNodeComponentArgsValidate(t *testing.T) {
 			HostSlotDuration:              12,
 		},
 		ExecutionJwt:                "jwt-token",
+		ExecutionPvcSize:            "150Gi",
 		LighthousePvcSize:           "100Gi",
 		RollupPvcSize:               "50Gi",
 		ExecutionClientImage:        "execution:latest",
@@ -54,6 +55,7 @@ func TestSignetNodeComponentArgsValidate(t *testing.T) {
 		Namespace:                   "default",
 		Env:                         validArgs.Env,
 		ExecutionJwt:                validArgs.ExecutionJwt,
+		ExecutionPvcSize:            validArgs.ExecutionPvcSize,
 		LighthousePvcSize:           validArgs.LighthousePvcSize,
 		RollupPvcSize:               validArgs.RollupPvcSize,
 		ExecutionClientImage:        validArgs.ExecutionClientImage,
@@ -71,6 +73,7 @@ func TestSignetNodeComponentArgsValidate(t *testing.T) {
 		Name:                        "test-node",
 		Env:                         validArgs.Env,
 		ExecutionJwt:                validArgs.ExecutionJwt,
+		ExecutionPvcSize:            validArgs.ExecutionPvcSize,
 		LighthousePvcSize:           validArgs.LighthousePvcSize,
 		RollupPvcSize:               validArgs.RollupPvcSize,
 		ExecutionClientImage:        validArgs.ExecutionClientImage,
@@ -88,6 +91,7 @@ func TestSignetNodeComponentArgsValidate(t *testing.T) {
 		Name:                        "test-node",
 		Namespace:                   "default",
 		Env:                         validArgs.Env,
+		ExecutionPvcSize:            validArgs.ExecutionPvcSize,
 		LighthousePvcSize:           validArgs.LighthousePvcSize,
 		RollupPvcSize:               validArgs.RollupPvcSize,
 		ExecutionClientImage:        validArgs.ExecutionClientImage,
@@ -105,6 +109,7 @@ func TestSignetNodeComponentArgsValidate(t *testing.T) {
 		Name:                        "test-node",
 		Namespace:                   "default",
 		ExecutionJwt:                validArgs.ExecutionJwt,
+		ExecutionPvcSize:            validArgs.ExecutionPvcSize,
 		LighthousePvcSize:           validArgs.LighthousePvcSize,
 		RollupPvcSize:               validArgs.RollupPvcSize,
 		ExecutionClientImage:        validArgs.ExecutionClientImage,
@@ -117,4 +122,22 @@ func TestSignetNodeComponentArgsValidate(t *testing.T) {
 	err = invalidArgs4.Validate()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid signet node env")
+
+	// Test with missing execution pvc size
+	invalidArgs5 := SignetNodeComponentArgs{
+		Name:                        "test-node",
+		Namespace:                   "default",
+		Env:                         validArgs.Env,
+		ExecutionJwt:                validArgs.ExecutionJwt,
+		LighthousePvcSize:           validArgs.LighthousePvcSize,
+		RollupPvcSize:               validArgs.RollupPvcSize,
+		ExecutionClientImage:        validArgs.ExecutionClientImage,
+		ConsensusClientImage:        validArgs.ConsensusClientImage,
+		ExecutionClientStartCommand: validArgs.ExecutionClientStartCommand,
+		ConsensusClientStartCommand: validArgs.ConsensusClientStartCommand,
+	}
+
+	err = invalidArgs5.Validate()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "execution pvc size is required")
 }

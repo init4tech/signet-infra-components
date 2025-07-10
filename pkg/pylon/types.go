@@ -1,8 +1,6 @@
 package pylon
 
 import (
-	"strconv"
-
 	"github.com/init4tech/signet-infra-components/pkg/ethereum"
 	"github.com/init4tech/signet-infra-components/pkg/utils"
 	v1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -33,22 +31,22 @@ type pylonComponentArgsInternal struct {
 
 // Public-facing environment struct with base Go types
 type PylonEnv struct {
-	PylonStartBlock            int    `pulumi:"pylonStartBlock" validate:"required"`
+	PylonStartBlock            string `pulumi:"pylonStartBlock" validate:"required"`
 	PylonS3Url                 string `pulumi:"pylonS3Url" validate:"required"`
 	PylonS3Region              string `pulumi:"pylonS3Region" validate:"required"`
 	PylonSenderAddress         string `pulumi:"pylonSenderAddress" validate:"required"`
-	PylonNetworkSlotDuration   int    `pulumi:"pylonNetworkSlotDuration" validate:"required"`
-	PylonNetworkSlotOffset     int    `pulumi:"pylonNetworkSlotOffset" validate:"required"`
-	PylonRequestsPerSecond     int    `pulumi:"pylonRequestsPerSecond" validate:"required"`
+	PylonNetworkSlotDuration   string `pulumi:"pylonNetworkSlotDuration" validate:"required"`
+	PylonNetworkSlotOffset     string `pulumi:"pylonNetworkSlotOffset" validate:"required"`
+	PylonRequestsPerSecond     string `pulumi:"pylonRequestsPerSecond" validate:"required"`
 	PylonRustLog               string `pulumi:"pylonRustLog"`
-	PylonPort                  int    `pulumi:"pylonPort" validate:"required"`
+	PylonPort                  string `pulumi:"pylonPort" validate:"required"`
 	AwsAccessKeyId             string `pulumi:"awsAccessKeyId" validate:"required"`
 	AwsSecretAccessKey         string `pulumi:"awsSecretAccessKey" validate:"required"`
 	AwsRegion                  string `pulumi:"awsRegion" validate:"required"`
 	PylonDbUrl                 string `pulumi:"pylonDbUrl" validate:"required"`
 	PylonConsensusClientUrl    string `pulumi:"pylonConsensusClientUrl" validate:"required"`
 	PylonBlobscanBaseUrl       string `pulumi:"pylonBlobscanBaseUrl" validate:"required"`
-	PylonNetworkStartTimestamp int    `pulumi:"pylonNetworkStartTimestamp" validate:"required"`
+	PylonNetworkStartTimestamp string `pulumi:"pylonNetworkStartTimestamp" validate:"required"`
 }
 
 // Internal environment struct with Pulumi types
@@ -87,22 +85,22 @@ func (args PylonComponentArgs) toInternal() pylonComponentArgsInternal {
 // Conversion function to convert public env to internal env
 func (e PylonEnv) toInternal() pylonEnvInternal {
 	return pylonEnvInternal{
-		PylonStartBlock:            pulumi.String(strconv.Itoa(e.PylonStartBlock)),
+		PylonStartBlock:            pulumi.String(e.PylonStartBlock),
 		PylonS3Url:                 pulumi.String(e.PylonS3Url),
 		PylonS3Region:              pulumi.String(e.PylonS3Region),
 		PylonSenderAddress:         pulumi.String(e.PylonSenderAddress),
-		PylonNetworkSlotDuration:   pulumi.String(strconv.Itoa(e.PylonNetworkSlotDuration)),
-		PylonNetworkSlotOffset:     pulumi.String(strconv.Itoa(e.PylonNetworkSlotOffset)),
-		PylonRequestsPerSecond:     pulumi.String(strconv.Itoa(e.PylonRequestsPerSecond)),
+		PylonNetworkSlotDuration:   pulumi.String(e.PylonNetworkSlotDuration),
+		PylonNetworkSlotOffset:     pulumi.String(e.PylonNetworkSlotOffset),
+		PylonRequestsPerSecond:     pulumi.String(e.PylonRequestsPerSecond),
 		PylonRustLog:               pulumi.String(e.PylonRustLog),
-		PylonPort:                  pulumi.String(strconv.Itoa(e.PylonPort)),
+		PylonPort:                  pulumi.String(e.PylonPort),
 		AwsAccessKeyId:             pulumi.String(e.AwsAccessKeyId),
 		AwsSecretAccessKey:         pulumi.String(e.AwsSecretAccessKey),
 		AwsRegion:                  pulumi.String(e.AwsRegion),
 		PylonDbUrl:                 pulumi.String(e.PylonDbUrl),
 		PylonConsensusClientUrl:    pulumi.String(e.PylonConsensusClientUrl),
 		PylonBlobscanBaseUrl:       pulumi.String(e.PylonBlobscanBaseUrl),
-		PylonNetworkStartTimestamp: pulumi.String(strconv.Itoa(e.PylonNetworkStartTimestamp)),
+		PylonNetworkStartTimestamp: pulumi.String(e.PylonNetworkStartTimestamp),
 	}
 }
 

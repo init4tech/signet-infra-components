@@ -72,7 +72,7 @@ func ValidatePylon(ctx *pulumi.Context, args *PylonComponentArgs) error {
 }
 
 func validateEnv(env PylonEnv) error {
-	if env.PylonStartBlock == 0 {
+	if env.PylonStartBlock == "" {
 		return fmt.Errorf("pylonStartBlock is required")
 	}
 
@@ -96,23 +96,23 @@ func validateEnv(env PylonEnv) error {
 		return fmt.Errorf("pylonBlobscanBaseUrl is required")
 	}
 
-	if env.PylonNetworkStartTimestamp == 0 {
+	if env.PylonNetworkStartTimestamp == "" {
 		return fmt.Errorf("pylonNetworkStartTimestamp is required")
 	}
 
-	if env.PylonNetworkSlotDuration == 0 {
+	if env.PylonNetworkSlotDuration == "" {
 		return fmt.Errorf("pylonNetworkSlotDuration is required")
 	}
 
-	if env.PylonNetworkSlotOffset < 0 {
-		return fmt.Errorf("pylonNetworkSlotOffset must be a non-negative integer")
+	if env.PylonNetworkSlotOffset == "" {
+		return fmt.Errorf("pylonNetworkSlotOffset is required")
 	}
 
-	if env.PylonRequestsPerSecond == 0 {
+	if env.PylonRequestsPerSecond == "" {
 		return fmt.Errorf("pylonRequestsPerSecond is required")
 	}
 
-	if env.PylonPort == 0 {
+	if env.PylonPort == "" {
 		return fmt.Errorf("pylonPort is required")
 	}
 

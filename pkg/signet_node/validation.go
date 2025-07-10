@@ -14,6 +14,9 @@ func (args *SignetNodeComponentArgs) Validate() error {
 	if args.ExecutionJwt == "" {
 		return fmt.Errorf("execution jwt is required")
 	}
+	if args.ExecutionPvcSize == "" {
+		return fmt.Errorf("execution pvc size is required")
+	}
 	if args.LighthousePvcSize == "" {
 		return fmt.Errorf("lighthouse pvc size is required")
 	}
