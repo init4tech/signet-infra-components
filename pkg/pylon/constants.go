@@ -1,18 +1,5 @@
 package pylon
 
-const (
-	ServiceTypeClusterIP = "ClusterIP"
-)
-
-// Istio API versions and kinds
-const (
-	IstioNetworkingAPIVersion = "networking.istio.io/v1alpha3"
-	IstioSecurityAPIVersion   = "security.istio.io/v1beta1"
-	VirtualServiceKind        = "VirtualService"
-	RequestAuthenticationKind = "RequestAuthentication"
-	AuthorizationPolicyKind   = "AuthorizationPolicy"
-)
-
 // Storage constants
 const (
 	ExecutionClientStorageSize = "150Gi"
@@ -27,14 +14,8 @@ const (
 	ExecutionWSPort        = 8546
 	ExecutionMetricsPort   = 9001
 	ExecutionAuthRPCPort   = 8551
-	ConsensusP2PPort       = 9000
 	ConsensusBeaconAPIPort = 4000
 	ConsensusMetricsPort   = 5054
-)
-
-// Database constants
-const (
-	PostgreSQLPort = "5432"
 )
 
 // Image constants
