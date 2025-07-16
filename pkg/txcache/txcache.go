@@ -155,7 +155,7 @@ func NewTxCacheComponent(ctx *pulumi.Context, args TxCacheComponentArgs, opts ..
 		return nil, err
 	}
 
-	_, err = crd.NewCustomResource(ctx, VirtualServiceName, &crd.CustomResourceArgs{
+	virtualService, err := crd.NewCustomResource(ctx, VirtualServiceName, &crd.CustomResourceArgs{
 		ApiVersion: pulumi.String(VirtualServiceAPIVersion),
 		Kind:       pulumi.String(VirtualServiceKind),
 		Metadata: &metav1.ObjectMetaArgs{
@@ -200,7 +200,7 @@ func NewTxCacheComponent(ctx *pulumi.Context, args TxCacheComponentArgs, opts ..
 
 	// create an RequestAuthentication policy for the virtual service
 	// oauth access token is required to accees the service
-	_, err = crd.NewCustomResource(ctx, JwtPolicyName, &crd.CustomResourceArgs{
+	requestAuthentication, err := crd.NewCustomResource(ctx, JwtPolicyName, &crd.CustomResourceArgs{
 		ApiVersion: pulumi.String(RequestAuthAPIVersion),
 		Kind:       pulumi.String(RequestAuthKind),
 		Metadata: &metav1.ObjectMetaArgs{
@@ -234,7 +234,7 @@ func NewTxCacheComponent(ctx *pulumi.Context, args TxCacheComponentArgs, opts ..
 
 	// create a policy for the virtual service
 	// only allow requests with a valid jwt token
-	_, err = crd.NewCustomResource(ctx, AuthPolicyName, &crd.CustomResourceArgs{
+	authorizationPolicy, err := crd.NewCustomResource(ctx, AuthPolicyName, &crd.CustomResourceArgs{
 		ApiVersion: pulumi.String(AuthPolicyAPIVersion),
 		Kind:       pulumi.String(AuthPolicyKind),
 		Metadata: &metav1.ObjectMetaArgs{
@@ -306,6 +306,13 @@ func NewTxCacheComponent(ctx *pulumi.Context, args TxCacheComponentArgs, opts ..
 	if err != nil {
 		return nil, err
 	}
+
+	component.ServiceAccount = serviceAccount
+	component.Deployment = txCacheDeployment
+	component.Service = txCacheService
+	component.VirtualService = virtualService
+	component.RequestAuthentication = requestAuthentication
+	component.AuthorizationPolicy = authorizationPolicy
 
 	return component, nil
 }

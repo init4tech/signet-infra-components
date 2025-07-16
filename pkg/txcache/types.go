@@ -1,8 +1,19 @@
 package txcache
 
-import "github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+import (
+	crd "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apiextensions"
+	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
+	corev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+)
 
 type TxCacheComponent struct {
+	ServiceAccount        *corev1.ServiceAccount
+	Deployment            *appsv1.Deployment
+	Service               *corev1.Service
+	VirtualService        *crd.CustomResource
+	RequestAuthentication *crd.CustomResource
+	AuthorizationPolicy   *crd.CustomResource
 	pulumi.ResourceState
 }
 
