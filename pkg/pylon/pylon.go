@@ -67,7 +67,7 @@ func NewPylonComponent(ctx *pulumi.Context, args *PylonComponentArgs, opts ...pu
 			ImagePullPolicy:         ImagePullPolicyAlways,
 			BeaconAPIPort:           ConsensusBeaconAPIPort,
 			MetricsPort:             ConsensusMetricsPort,
-			ExecutionClientEndpoint: fmt.Sprintf("http://%s-service.%s.svc.cluster.local:%s", args.Name, args.Namespace, ExecutionRPCPort),
+			ExecutionClientEndpoint: fmt.Sprintf("http://%s-service.%s.svc.cluster.local:%d", args.Name, args.Namespace, ExecutionRPCPort),
 		},
 	}
 

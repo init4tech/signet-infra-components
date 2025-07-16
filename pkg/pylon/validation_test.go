@@ -62,11 +62,10 @@ func TestPylonComponentArgsValidate(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "namespace is required")
 
-	// Test with missing pylonDbUrl
+	// Test with missing executionJwt
 	invalidArgs3 := PylonComponentArgs{
 		Name:                "test-pylon",
 		Namespace:           "default",
-		ExecutionJwt:        "test-jwt",
 		PylonImage:          "test-image:latest",
 		PylonBlobBucketName: "test-bucket",
 		Env:                 validArgs.Env,
@@ -74,23 +73,10 @@ func TestPylonComponentArgsValidate(t *testing.T) {
 
 	err = invalidArgs3.Validate()
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "pylonDbUrl is required")
-
-	// Test with missing executionJwt
-	invalidArgs4 := PylonComponentArgs{
-		Name:                "test-pylon",
-		Namespace:           "default",
-		PylonImage:          "test-image:latest",
-		PylonBlobBucketName: "test-bucket",
-		Env:                 validArgs.Env,
-	}
-
-	err = invalidArgs4.Validate()
-	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "executionJwt is required")
 
 	// Test with missing pylonImage
-	invalidArgs5 := PylonComponentArgs{
+	invalidArgs4 := PylonComponentArgs{
 		Name:                "test-pylon",
 		Namespace:           "default",
 		ExecutionJwt:        "test-jwt",
@@ -98,12 +84,12 @@ func TestPylonComponentArgsValidate(t *testing.T) {
 		Env:                 validArgs.Env,
 	}
 
-	err = invalidArgs5.Validate()
+	err = invalidArgs4.Validate()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "pylonImage is required")
 
 	// Test with missing pylonBlobBucketName
-	invalidArgs6 := PylonComponentArgs{
+	invalidArgs5 := PylonComponentArgs{
 		Name:         "test-pylon",
 		Namespace:    "default",
 		ExecutionJwt: "test-jwt",
@@ -111,7 +97,7 @@ func TestPylonComponentArgsValidate(t *testing.T) {
 		Env:          validArgs.Env,
 	}
 
-	err = invalidArgs6.Validate()
+	err = invalidArgs5.Validate()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "pylonBlobBucketName is required")
 }
