@@ -11,7 +11,6 @@ func TestPylonComponentArgsValidate(t *testing.T) {
 	validArgs := PylonComponentArgs{
 		Name:                "test-pylon",
 		Namespace:           "default",
-		DbProjectName:       "test-db-project",
 		ExecutionJwt:        "test-jwt",
 		PylonImage:          "test-image:latest",
 		PylonBlobBucketName: "test-bucket",
@@ -40,7 +39,6 @@ func TestPylonComponentArgsValidate(t *testing.T) {
 	// Test with missing name
 	invalidArgs1 := PylonComponentArgs{
 		Namespace:           "default",
-		DbProjectName:       "test-db-project",
 		ExecutionJwt:        "test-jwt",
 		PylonImage:          "test-image:latest",
 		PylonBlobBucketName: "test-bucket",
@@ -54,7 +52,6 @@ func TestPylonComponentArgsValidate(t *testing.T) {
 	// Test with missing namespace
 	invalidArgs2 := PylonComponentArgs{
 		Name:                "test-pylon",
-		DbProjectName:       "test-db-project",
 		ExecutionJwt:        "test-jwt",
 		PylonImage:          "test-image:latest",
 		PylonBlobBucketName: "test-bucket",
@@ -65,7 +62,7 @@ func TestPylonComponentArgsValidate(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "namespace is required")
 
-	// Test with missing dbProjectName
+	// Test with missing pylonDbUrl
 	invalidArgs3 := PylonComponentArgs{
 		Name:                "test-pylon",
 		Namespace:           "default",
@@ -77,13 +74,12 @@ func TestPylonComponentArgsValidate(t *testing.T) {
 
 	err = invalidArgs3.Validate()
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "dbProjectName is required")
+	assert.Contains(t, err.Error(), "pylonDbUrl is required")
 
 	// Test with missing executionJwt
 	invalidArgs4 := PylonComponentArgs{
 		Name:                "test-pylon",
 		Namespace:           "default",
-		DbProjectName:       "test-db-project",
 		PylonImage:          "test-image:latest",
 		PylonBlobBucketName: "test-bucket",
 		Env:                 validArgs.Env,
@@ -97,7 +93,6 @@ func TestPylonComponentArgsValidate(t *testing.T) {
 	invalidArgs5 := PylonComponentArgs{
 		Name:                "test-pylon",
 		Namespace:           "default",
-		DbProjectName:       "test-db-project",
 		ExecutionJwt:        "test-jwt",
 		PylonBlobBucketName: "test-bucket",
 		Env:                 validArgs.Env,
@@ -109,12 +104,11 @@ func TestPylonComponentArgsValidate(t *testing.T) {
 
 	// Test with missing pylonBlobBucketName
 	invalidArgs6 := PylonComponentArgs{
-		Name:          "test-pylon",
-		Namespace:     "default",
-		DbProjectName: "test-db-project",
-		ExecutionJwt:  "test-jwt",
-		PylonImage:    "test-image:latest",
-		Env:           validArgs.Env,
+		Name:         "test-pylon",
+		Namespace:    "default",
+		ExecutionJwt: "test-jwt",
+		PylonImage:   "test-image:latest",
+		Env:          validArgs.Env,
 	}
 
 	err = invalidArgs6.Validate()

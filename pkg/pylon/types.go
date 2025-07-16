@@ -1,9 +1,10 @@
 package pylon
 
 import (
+	"github.com/init4tech/signet-infra-components/pkg/aws"
 	"github.com/init4tech/signet-infra-components/pkg/ethereum"
 	"github.com/init4tech/signet-infra-components/pkg/utils"
-	v1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
+	corev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -11,18 +12,17 @@ import (
 type PylonComponentArgs struct {
 	Namespace           string
 	Name                string
-	DbProjectName       string
 	ExecutionJwt        string
 	PylonImage          string
 	PylonBlobBucketName string
 	Env                 PylonEnv
+	PostgresDbArgs      aws.PostgresDbArgs
 }
 
 // Internal structs with Pulumi types for use within the component
 type pylonComponentArgsInternal struct {
 	Namespace           pulumi.StringInput
 	Name                pulumi.StringInput
-	DbProjectName       pulumi.StringInput
 	ExecutionJwt        pulumi.StringInput
 	PylonImage          pulumi.StringInput
 	PylonBlobBucketName pulumi.StringInput
@@ -74,7 +74,6 @@ func (args PylonComponentArgs) toInternal() pylonComponentArgsInternal {
 	return pylonComponentArgsInternal{
 		Namespace:           pulumi.String(args.Namespace),
 		Name:                pulumi.String(args.Name),
-		DbProjectName:       pulumi.String(args.DbProjectName),
 		ExecutionJwt:        pulumi.String(args.ExecutionJwt),
 		PylonImage:          pulumi.String(args.PylonImage),
 		PylonBlobBucketName: pulumi.String(args.PylonBlobBucketName),
@@ -112,5 +111,5 @@ func (e pylonEnvInternal) GetEnvMap() pulumi.StringMap {
 type PylonComponent struct {
 	pulumi.ResourceState
 	EthereumNode      *ethereum.EthereumNodeComponent
-	PylonEnvConfigMap *v1.ConfigMap
+	PylonEnvConfigMap *corev1.ConfigMap
 }

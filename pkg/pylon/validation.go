@@ -2,8 +2,6 @@ package pylon
 
 import (
 	"fmt"
-
-	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 // Validate validates the PylonComponentArgs struct
@@ -14,42 +12,6 @@ func (args *PylonComponentArgs) Validate() error {
 
 	if args.Name == "" {
 		return fmt.Errorf("name is required")
-	}
-
-	if args.DbProjectName == "" {
-		return fmt.Errorf("dbProjectName is required")
-	}
-
-	if args.ExecutionJwt == "" {
-		return fmt.Errorf("executionJwt is required")
-	}
-
-	if args.PylonImage == "" {
-		return fmt.Errorf("pylonImage is required")
-	}
-
-	if args.PylonBlobBucketName == "" {
-		return fmt.Errorf("pylonBlobBucketName is required")
-	}
-
-	if err := validateEnv(args.Env); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func ValidatePylon(ctx *pulumi.Context, args *PylonComponentArgs) error {
-	if args.Namespace == "" {
-		return fmt.Errorf("namespace is required")
-	}
-
-	if args.Name == "" {
-		return fmt.Errorf("name is required")
-	}
-
-	if args.DbProjectName == "" {
-		return fmt.Errorf("dbProjectName is required")
 	}
 
 	if args.ExecutionJwt == "" {

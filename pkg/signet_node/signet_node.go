@@ -27,7 +27,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		return nil, fmt.Errorf("failed to register component resource: %w", err)
 	}
 
-	_, err = CreatePersistentVolumeClaim(
+	hostDatabasePvc, err := CreatePersistentVolumeClaim(
 		ctx,
 		"signet-node-data",
 		internalArgs.Namespace,
@@ -39,7 +39,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		return nil, fmt.Errorf("failed to create signet node db data pvc: %w", err)
 	}
 
-	_, err = CreatePersistentVolumeClaim(
+	rollupDatabasePvc, err := CreatePersistentVolumeClaim(
 		ctx,
 		"rollup-data",
 		internalArgs.Namespace,
@@ -57,7 +57,6 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 			"jwt.hex": internalArgs.ExecutionJwt,
 		},
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(secretName),
 			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, secretName, args.Name, nil),
 		},
@@ -84,7 +83,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	executionClientName := "signet-node"
 	executionClientServiceName := fmt.Sprintf("%s-service", executionClientName)
 
-	hostExecutionClientService, err := corev1.NewService(ctx, executionClientServiceName, &corev1.ServiceArgs{
+	signetNodeService, err := corev1.NewService(ctx, executionClientServiceName, &corev1.ServiceArgs{
 		Spec: &corev1.ServiceSpecArgs{
 			Selector: pulumi.StringMap{"app": pulumi.String("signet-node-execution-set")},
 			Type:     pulumi.String("ClusterIP"),
@@ -124,7 +123,6 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 			},
 		},
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(executionClientServiceName),
 			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, executionClientServiceName, args.Name, nil),
 		},
@@ -132,8 +130,6 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	if err != nil {
 		return nil, fmt.Errorf("failed to create execution client service: %w", err)
 	}
-
-	executionServiceIpString := hostExecutionClientService.Spec.ClusterIP().Elem()
 
 	// STATEFUL SET
 	hostStatefulSetName := "signet-node-execution-set"
@@ -144,9 +140,8 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	executionPodLabels["app"] = pulumi.String(hostStatefulSetName)
 
 	// Define the StatefulSet for the 'reth' container with a configmap volume and a data persistent volume
-	_, err = appsv1.NewStatefulSet(ctx, hostStatefulSetResourceName, &appsv1.StatefulSetArgs{
+	signetNodeStatefulSet, err := appsv1.NewStatefulSet(ctx, hostStatefulSetResourceName, &appsv1.StatefulSetArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(hostStatefulSetName),
 			Labels:    utils.CreateResourceLabels(args.Name, hostStatefulSetResourceName, args.Name, nil),
 			Namespace: internalArgs.Namespace,
 		},
@@ -168,32 +163,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 							Name:            pulumi.String(hostStatefulSetName),
 							Image:           internalArgs.ExecutionClientImage,
 							ImagePullPolicy: pulumi.String("Always"),
-							Command: pulumi.StringArray{
-								pulumi.String("signet"),
-								pulumi.String("node"),
-								pulumi.String("--datadir=/root/.local/share/reth/pecorino"),
-								pulumi.String("--chain=/network_configs/genesis.json"),
-								pulumi.String("--http"),
-								pulumi.String("--http.port=8545"),
-								pulumi.String("--http.addr=0.0.0.0"),
-								pulumi.String("--http.corsdomain=*"),
-								pulumi.String("--http.api=admin,net,eth,web3,debug,txpool,trace"),
-								pulumi.String("--ws"),
-								pulumi.String("--ws.addr=0.0.0.0"),
-								pulumi.String("--ws.port=8546"),
-								pulumi.String("--ws.api=net,eth"),
-								pulumi.String("--ws.origins=*"),
-								executionServiceIpString.ApplyT(func(ip string) string {
-									return "--nat=extip:" + ip
-								}).(pulumi.StringOutput),
-								pulumi.String("--authrpc.port=8551"),
-								pulumi.String("--authrpc.jwtsecret=/etc/reth/execution-jwt/jwt.hex"),
-								pulumi.String("--authrpc.addr=0.0.0.0"),
-								pulumi.String("--metrics=0.0.0.0:9001"),
-								pulumi.String("--discovery.port=30303"),
-								pulumi.String("--port=30303"),
-								pulumi.String("--bootnodes=enode://02b1442bab88aa1fefc8fff37bcbffa18abf91450850bfc3e2d7d29296144dc74e71400bacd7882061d5193990ccba5441fde0f69dc00d065b0237cd236a055d@10.100.1.188:30303"),
-							},
+							Command:         internalArgs.ExecutionClientStartCommand,
 							EnvFrom: corev1.EnvFromSourceArray{
 								corev1.EnvFromSourceArgs{
 									ConfigMapRef: &corev1.ConfigMapEnvSourceArgs{
@@ -253,7 +223,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 						corev1.VolumeArgs{
 							Name: pulumi.String("signet-node-data"),
 							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSourceArgs{
-								ClaimName: pulumi.String("signet-node-data"),
+								ClaimName: hostDatabasePvc.Metadata.Name().Elem().ToStringOutput(),
 							},
 						},
 						corev1.VolumeArgs{
@@ -265,7 +235,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 						corev1.VolumeArgs{
 							Name: pulumi.String("rollup-data"),
 							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSourceArgs{
-								ClaimName: pulumi.String("rollup-data"),
+								ClaimName: rollupDatabasePvc.Metadata.Name().Elem().ToStringOutput(),
 							},
 						},
 					},
@@ -280,7 +250,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	// LIGHTHOUSE
 	consensusClientName := "lighthouse"
 
-	_, err = CreatePersistentVolumeClaim(
+	lighthousePvc, err := CreatePersistentVolumeClaim(
 		ctx,
 		"real-lighthouse-data",
 		internalArgs.Namespace,
@@ -311,7 +281,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	component.LighthouseConfigMap = consensusConfigMap
 
 	lighthouseServiceName := fmt.Sprintf("%s-service", consensusClientName)
-	lighthouseInternalService, err := corev1.NewService(ctx, lighthouseServiceName, &corev1.ServiceArgs{
+	lighthouseService, err := corev1.NewService(ctx, lighthouseServiceName, &corev1.ServiceArgs{
 		Spec: &corev1.ServiceSpecArgs{
 			Selector: pulumi.StringMap{"app": pulumi.String(consensusClientName)},
 			Type:     pulumi.String("ClusterIP"),
@@ -350,7 +320,6 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 			},
 		},
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(lighthouseServiceName),
 			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, lighthouseServiceName, args.Name, nil),
 		},
@@ -359,26 +328,27 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		return nil, fmt.Errorf("failed to create lighthouse internal service: %w", err)
 	}
 
-	lighthouseServiceIpString := lighthouseInternalService.Spec.ClusterIP().Elem()
-
-	lighthouseStatefulSet := "lighthouse"
-	lighthouseStatefulSetResourceName := fmt.Sprintf("%s-set", lighthouseStatefulSet)
+	lighthouseStatefulSetName := "lighthouse"
 
 	// Create pod labels with app label for stateful set
-	lighthousePodLabels := utils.CreateResourceLabels(args.Name, lighthouseStatefulSet, args.Name, nil)
-	lighthousePodLabels["app"] = pulumi.String(lighthouseStatefulSet)
+	lighthousePodLabels := utils.CreateResourceLabels(args.Name, lighthouseStatefulSetName, args.Name, nil)
+	lighthousePodLabels["app"] = pulumi.String(lighthouseStatefulSetName)
 
-	_, err = appsv1.NewStatefulSet(ctx, lighthouseStatefulSetResourceName, &appsv1.StatefulSetArgs{
+	signetNodeServiceName := signetNodeService.Metadata.Name().Elem().ToStringOutput()
+	consensusClientStartCommand := signetNodeServiceName.ApplyT(func(name string) []string {
+		return append(args.ConsensusClientStartCommand, fmt.Sprintf("--execution-endpoints=http://%s:8551", name))
+	}).(pulumi.StringArrayOutput)
+
+	lighthouseStatefulSet, err := appsv1.NewStatefulSet(ctx, lighthouseStatefulSetName, &appsv1.StatefulSetArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(lighthouseStatefulSet),
-			Labels:    utils.CreateResourceLabels(args.Name, lighthouseStatefulSetResourceName, args.Name, nil),
+			Labels:    utils.CreateResourceLabels(args.Name, lighthouseStatefulSetName, args.Name, nil),
 			Namespace: internalArgs.Namespace,
 		},
 		Spec: &appsv1.StatefulSetSpecArgs{
 			Replicas: pulumi.Int(1),
 			Selector: &metav1.LabelSelectorArgs{
 				MatchLabels: pulumi.StringMap{
-					"app": pulumi.String(lighthouseStatefulSet),
+					"app": pulumi.String(lighthouseStatefulSetName),
 				},
 			},
 			Template: &corev1.PodTemplateSpecArgs{
@@ -389,39 +359,9 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 				Spec: &corev1.PodSpecArgs{
 					Containers: corev1.ContainerArray{
 						corev1.ContainerArgs{
-							Name:  pulumi.String(lighthouseStatefulSet),
-							Image: internalArgs.ConsensusClientImage,
-							Command: pulumi.StringArray{
-								pulumi.String("lighthouse"),
-								pulumi.String("beacon_node"),
-								pulumi.String("--debug-level=info"),
-								pulumi.String("--datadir=/root/.lighthouse/holesky/beacon-data"),
-								pulumi.String("--disable-enr-auto-update"),
-								lighthouseServiceIpString.ApplyT(func(ip string) string {
-									return "--enr-address=" + ip
-								}).(pulumi.StringOutput),
-								pulumi.String("--enr-udp-port=9000"),
-								pulumi.String("--enr-tcp-port=9000"),
-								pulumi.String("--listen-address=0.0.0.0"),
-								pulumi.String("--port=9000"),
-								pulumi.String("--http"),
-								pulumi.String("--http-address=0.0.0.0"),
-								pulumi.String("--http-port=4000"),
-								pulumi.String("--disable-packet-filter"),
-								executionServiceIpString.ApplyT(func(ip string) string {
-									return "--execution-endpoints=http://" + ip + ":8551"
-								}).(pulumi.StringOutput),
-								pulumi.String("--execution-jwt=/secrets/jwt.hex"),
-								pulumi.String("--suggested-fee-recipient=0x8943545177806ED17B9F23F0a21ee5948eCaa776"),
-								pulumi.String("--metrics"),
-								pulumi.String("--metrics-address=0.0.0.0"),
-								pulumi.String("--metrics-allow-origin=*"),
-								pulumi.String("--metrics-port=5054"),
-								pulumi.String("--enable-private-discovery"),
-								pulumi.String("--testnet-dir=/network_configs"),
-								pulumi.String("--boot-nodes=enr:-MS4QFGg1RsGSWdGQuBest1ST2az6Zea1-bJBoNsZKmbi5xVfPKtoA-YScWKSibelm35OQf8a8sAXZAwpMASChDM1FQBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDYTi7gYAAAOADh9QUAAAAAgmlkgnY0gmlwhApkhyWEcXVpY4IjKYlzZWNwMjU2azGhArnO2f0iOAd09pC3Izvz2YU-oadRMuVgCe9jgOQEuG8qiHN5bmNuZXRzAIN0Y3CCIyiDdWRwgiMo"),
-								pulumi.String("--checkpoint-sync-url=http://cl-1-lighthouse-reth.kt-cloud.svc.cluster.local:4000"),
-							},
+							Name:    pulumi.String(lighthouseStatefulSetName),
+							Image:   internalArgs.ConsensusClientImage,
+							Command: consensusClientStartCommand,
 							Ports: corev1.ContainerPortArray{
 								corev1.ContainerPortArgs{
 									ContainerPort: pulumi.Int(8551),
@@ -446,7 +386,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 							},
 							VolumeMounts: corev1.VolumeMountArray{
 								corev1.VolumeMountArgs{
-									Name:      pulumi.Sprintf("%s-config", lighthouseStatefulSet),
+									Name:      pulumi.Sprintf("%s-config", lighthouseStatefulSetName),
 									MountPath: pulumi.String("/etc/lighthouse"),
 								},
 								corev1.VolumeMountArgs{
@@ -454,7 +394,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 									MountPath: pulumi.String("/root/.lighthouse/holesky"),
 								},
 								corev1.VolumeMountArgs{
-									Name:      pulumi.Sprintf("%s-execution-jwt", lighthouseStatefulSet),
+									Name:      pulumi.Sprintf("%s-execution-jwt", lighthouseStatefulSetName),
 									MountPath: pulumi.String("/secrets"),
 								},
 							},
@@ -464,7 +404,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 					DnsPolicy: pulumi.String("ClusterFirst"),
 					Volumes: corev1.VolumeArray{
 						corev1.VolumeArgs{
-							Name: pulumi.Sprintf("%s-config", lighthouseStatefulSet),
+							Name: pulumi.Sprintf("%s-config", lighthouseStatefulSetName),
 							ConfigMap: &corev1.ConfigMapVolumeSourceArgs{
 								Name: consensusConfigMap.Metadata.Name(),
 							},
@@ -472,11 +412,11 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 						corev1.VolumeArgs{
 							Name: pulumi.String("real-lighthouse-db"),
 							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSourceArgs{
-								ClaimName: pulumi.String("real-lighthouse-data"),
+								ClaimName: lighthousePvc.Metadata.Name().Elem().ToStringOutput(),
 							},
 						},
 						corev1.VolumeArgs{
-							Name: pulumi.Sprintf("%s-execution-jwt", lighthouseStatefulSet),
+							Name: pulumi.Sprintf("%s-execution-jwt", lighthouseStatefulSetName),
 							Secret: &corev1.SecretVolumeSourceArgs{
 								SecretName: secret.Metadata.Name(),
 							},
@@ -495,18 +435,20 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	// to the signet-rpc service in the cluster
 	// VirtualService spec definition: https://istio.io/latest/docs/reference/config/networking/virtual-service/
 	virtualServiceName := "signet-rpc"
-	_, err = crd.NewCustomResource(ctx, "signet-rpc-vservice", &crd.CustomResourceArgs{
+	signetNodeServiceUrl := signetNodeServiceName.ApplyT(func(name string) string {
+		return fmt.Sprintf("%s.%s.svc.cluster.local", name, internalArgs.Namespace)
+	})
+	virtualService, err := crd.NewCustomResource(ctx, "signet-rpc-vservice", &crd.CustomResourceArgs{
 		ApiVersion: pulumi.String("networking.istio.io/v1alpha3"),
 		Kind:       pulumi.String("VirtualService"),
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(virtualServiceName),
 			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, virtualServiceName, args.Name, nil),
 		},
 		OtherFields: map[string]interface{}{
 			"spec": map[string]interface{}{
 				"hosts": []string{
-					"rpc.pecorino.signet.sh",
+					"rpc.mainnet.signet.sh",
 				},
 				"gateways": []string{
 					"default/init4-api-gateway",
@@ -531,7 +473,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 									"port": map[string]interface{}{
 										"number": args.Env.RpcPort,
 									},
-									"host": "signet-node-service.kt-cloud.svc.cluster.local",
+									"host": signetNodeServiceUrl,
 								},
 							},
 						},
@@ -543,6 +485,18 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 	if err != nil {
 		return nil, fmt.Errorf("failed to create signet rpc virtual service: %w", err)
 	}
+
+	component.SignetNodeService = signetNodeService
+	component.LighthouseService = lighthouseService
+	component.SignetNodeStatefulSet = signetNodeStatefulSet
+	component.LighthouseStatefulSet = lighthouseStatefulSet
+	component.SignetNodeConfigMap = executionConfigMap
+	component.LighthouseConfigMap = consensusConfigMap
+	component.JwtSecret = secret
+	component.HostDatabasePvc = hostDatabasePvc
+	component.RollupDatabasePvc = rollupDatabasePvc
+	component.LighthousePvc = lighthousePvc
+	component.SignetNodeVirtualService = virtualService
 
 	return component, nil
 }

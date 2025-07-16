@@ -206,7 +206,6 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 	}
 
 	return component, nil
-	return component, nil
 }
 
 // createConsensusClientCommand creates the command array for the consensus client
