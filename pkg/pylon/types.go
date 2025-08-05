@@ -34,7 +34,7 @@ type PylonEnv struct {
 	PylonStartBlock            string `pulumi:"pylonStartBlock" validate:"required"`
 	PylonS3Url                 string `pulumi:"pylonS3Url" validate:"required"`
 	PylonS3Region              string `pulumi:"pylonS3Region" validate:"required"`
-	PylonSenderAddress         string `pulumi:"pylonSenderAddress" validate:"required"`
+	PylonSenders               string `pulumi:"pylonSenders" validate:"required"`
 	PylonNetworkSlotDuration   string `pulumi:"pylonNetworkSlotDuration" validate:"required"`
 	PylonNetworkSlotOffset     string `pulumi:"pylonNetworkSlotOffset" validate:"required"`
 	PylonRequestsPerSecond     string `pulumi:"pylonRequestsPerSecond" validate:"required"`
@@ -44,9 +44,10 @@ type PylonEnv struct {
 	AwsSecretAccessKey         string `pulumi:"awsSecretAccessKey" validate:"required"`
 	AwsRegion                  string `pulumi:"awsRegion" validate:"required"`
 	PylonDbUrl                 string `pulumi:"pylonDbUrl" validate:"required"`
-	PylonConsensusClientUrl    string `pulumi:"pylonConsensusClientUrl" validate:"required"`
+	PylonClUrl                 string `pulumi:"pylonClUrl" validate:"required"`
 	PylonBlobscanBaseUrl       string `pulumi:"pylonBlobscanBaseUrl" validate:"required"`
 	PylonNetworkStartTimestamp string `pulumi:"pylonNetworkStartTimestamp" validate:"required"`
+	PylonS3BucketName          string `pulumi:"pylonS3BucketName" validate:"required"`
 }
 
 // Internal environment struct with Pulumi types
@@ -54,7 +55,7 @@ type pylonEnvInternal struct {
 	PylonStartBlock            pulumi.StringInput `pulumi:"pylonStartBlock" validate:"required"`
 	PylonS3Url                 pulumi.StringInput `pulumi:"pylonS3Url" validate:"required"`
 	PylonS3Region              pulumi.StringInput `pulumi:"pylonS3Region" validate:"required"`
-	PylonSenderAddress         pulumi.StringInput `pulumi:"pylonSenderAddress" validate:"required"`
+	PylonSenders               pulumi.StringInput `pulumi:"pylonSenders" validate:"required"`
 	PylonNetworkSlotDuration   pulumi.StringInput `pulumi:"pylonNetworkSlotDuration" validate:"required"`
 	PylonNetworkSlotOffset     pulumi.StringInput `pulumi:"pylonNetworkSlotOffset" validate:"required"`
 	PylonRequestsPerSecond     pulumi.StringInput `pulumi:"pylonRequestsPerSecond" validate:"required"`
@@ -64,9 +65,10 @@ type pylonEnvInternal struct {
 	AwsSecretAccessKey         pulumi.StringInput `pulumi:"awsSecretAccessKey" validate:"required"`
 	AwsRegion                  pulumi.StringInput `pulumi:"awsRegion" validate:"required"`
 	PylonDbUrl                 pulumi.StringInput `pulumi:"pylonDbUrl" validate:"required"`
-	PylonConsensusClientUrl    pulumi.StringInput `pulumi:"pylonConsensusClientUrl" validate:"required"`
+	PylonClUrl                 pulumi.StringInput `pulumi:"pylonClUrl" validate:"required"`
 	PylonBlobscanBaseUrl       pulumi.StringInput `pulumi:"pylonBlobscanBaseUrl" validate:"required"`
 	PylonNetworkStartTimestamp pulumi.StringInput `pulumi:"pylonNetworkStartTimestamp" validate:"required"`
+	PylonS3BucketName          pulumi.StringInput `pulumi:"pylonS3BucketName" validate:"required"`
 }
 
 // Conversion function to convert public args to internal args
@@ -87,7 +89,7 @@ func (e PylonEnv) toInternal() pylonEnvInternal {
 		PylonStartBlock:            pulumi.String(e.PylonStartBlock),
 		PylonS3Url:                 pulumi.String(e.PylonS3Url),
 		PylonS3Region:              pulumi.String(e.PylonS3Region),
-		PylonSenderAddress:         pulumi.String(e.PylonSenderAddress),
+		PylonSenders:               pulumi.String(e.PylonSenders),
 		PylonNetworkSlotDuration:   pulumi.String(e.PylonNetworkSlotDuration),
 		PylonNetworkSlotOffset:     pulumi.String(e.PylonNetworkSlotOffset),
 		PylonRequestsPerSecond:     pulumi.String(e.PylonRequestsPerSecond),
@@ -97,9 +99,10 @@ func (e PylonEnv) toInternal() pylonEnvInternal {
 		AwsSecretAccessKey:         pulumi.String(e.AwsSecretAccessKey),
 		AwsRegion:                  pulumi.String(e.AwsRegion),
 		PylonDbUrl:                 pulumi.String(e.PylonDbUrl),
-		PylonConsensusClientUrl:    pulumi.String(e.PylonConsensusClientUrl),
+		PylonClUrl:                 pulumi.String(e.PylonClUrl),
 		PylonBlobscanBaseUrl:       pulumi.String(e.PylonBlobscanBaseUrl),
 		PylonNetworkStartTimestamp: pulumi.String(e.PylonNetworkStartTimestamp),
+		PylonS3BucketName:          pulumi.String(e.PylonS3BucketName),
 	}
 }
 

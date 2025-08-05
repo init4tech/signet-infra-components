@@ -1,6 +1,7 @@
 package txcache
 
 import (
+	"github.com/init4tech/signet-infra-components/pkg/utils"
 	crd "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apiextensions"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
 	corev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -9,6 +10,7 @@ import (
 
 type TxCacheComponent struct {
 	ServiceAccount        *corev1.ServiceAccount
+	ConfigMap             *corev1.ConfigMap
 	Deployment            *appsv1.Deployment
 	Service               *corev1.Service
 	VirtualService        *crd.CustomResource
@@ -103,4 +105,9 @@ func (env TxCacheEnv) toInternal() TxCacheEnvInternal {
 		OtelExporterOtlpProtocol:  pulumi.String(env.OtelExporterOtlpProtocol),
 		OtelExporterOtlpEndpoint:  pulumi.String(env.OtelExporterOtlpEndpoint),
 	}
+}
+
+// GetEnvMap implements the EnvProvider interface for TxCacheEnvInternal
+func (e TxCacheEnvInternal) GetEnvMap() pulumi.StringMap {
+	return utils.CreateEnvMap(e)
 }

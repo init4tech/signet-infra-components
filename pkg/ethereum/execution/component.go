@@ -273,7 +273,9 @@ func NewExecutionClient(ctx *pulumi.Context, args *ExecutionClientArgs, opts ...
 // createExecutionClientCommand creates the command array for the execution client
 func createExecutionClientCommand(args *ExecutionClientArgs) pulumi.StringArray {
 	cmd := pulumi.StringArray{
-		pulumi.String("--datadir=/data"),
+		pulumi.String("pylon"),
+		pulumi.String("node"),
+		pulumi.String("--datadir=/data/execution"),
 		pulumi.String("--http"),
 		pulumi.Sprintf("--http.port=%d", args.RPCPort),
 		pulumi.String("--http.addr=0.0.0.0"),

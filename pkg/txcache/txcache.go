@@ -3,6 +3,7 @@ package txcache
 import (
 	"fmt"
 
+	"github.com/init4tech/signet-infra-components/pkg/utils"
 	crd "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apiextensions"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
 	corev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -35,7 +36,23 @@ func NewTxCacheComponent(ctx *pulumi.Context, args TxCacheComponentArgs, opts ..
 		Metadata: &metav1.ObjectMetaArgs{
 			Namespace: internalArgs.Namespace,
 		},
-	})
+	}, pulumi.Parent(component))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create service account: %w", err)
+	}
+
+	// Create ConfigMap for environment variables
+	configMapName := fmt.Sprintf("%s-env", args.Name)
+	configMap, err := utils.CreateConfigMap(
+		ctx,
+		configMapName,
+		internalArgs.Namespace,
+		appLabels,
+		internalArgs.Env,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create environment ConfigMap: %w", err)
+	}
 
 	// create the deployment for the quincey-server container to use the KMS key
 	txCacheDeployment, err := appsv1.NewDeployment(ctx, DeploymentName, &appsv1.DeploymentArgs{
@@ -58,66 +75,11 @@ func NewTxCacheComponent(ctx *pulumi.Context, args TxCacheComponentArgs, opts ..
 							Name:            pulumi.String(ContainerName),
 							Image:           internalArgs.Image,
 							ImagePullPolicy: pulumi.String(ImagePullPolicy),
-							Env: corev1.EnvVarArray{
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("HTTP_PORT"),
-									Value: internalArgs.Env.HttpPort,
-								},
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("AWS_ACCESS_KEY_ID"),
-									Value: internalArgs.Env.AwsAccessKeyId,
-								},
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("AWS_SECRET_ACCESS_KEY"),
-									Value: internalArgs.Env.AwsSecretAccessKey,
-								},
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("RUST_LOG"),
-									Value: internalArgs.Env.RustLog,
-								},
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("AWS_DEFAULT_REGION"),
-									Value: internalArgs.Env.AwsRegion,
-								},
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("BLOCK_QUERY_START"),
-									Value: internalArgs.Env.BlockQueryStart,
-								},
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("BLOCK_QUERY_CUTOFF"),
-									Value: internalArgs.Env.BlockQueryCutoff,
-								},
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("SLOT_OFFSET"),
-									Value: internalArgs.Env.SlotOffset,
-								},
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("EXPIRATION_TIMESTAMP_OFFSET"),
-									Value: internalArgs.Env.ExpirationTimestampOffset,
-								},
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("NETWORK_NAME"),
-									Value: internalArgs.Env.NetworkName,
-								},
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("BUILDERS"),
-									Value: internalArgs.Env.Builders,
-								},
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("SLOT_DURATION"),
-									Value: internalArgs.Env.SlotDuration,
-								},
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("START_TIMESTAMP"),
-									Value: internalArgs.Env.StartTimestamp,
-								},
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("OTEL_EXPORTER_OTLP_PROTOCOL"),
-									Value: internalArgs.Env.OtelExporterOtlpProtocol,
-								},
-								&corev1.EnvVarArgs{
-									Name:  pulumi.String("OTEL_EXPORTER_OTLP_ENDPOINT"),
-									Value: internalArgs.Env.OtelExporterOtlpEndpoint,
+							EnvFrom: corev1.EnvFromSourceArray{
+								&corev1.EnvFromSourceArgs{
+									ConfigMapRef: &corev1.ConfigMapEnvSourceArgs{
+										Name: configMap.Metadata.Name(),
+									},
 								},
 							},
 							Ports: corev1.ContainerPortArray{
@@ -130,7 +92,7 @@ func NewTxCacheComponent(ctx *pulumi.Context, args TxCacheComponentArgs, opts ..
 				},
 			},
 		},
-	}, pulumi.DependsOn([]pulumi.Resource{}))
+	}, pulumi.DependsOn([]pulumi.Resource{configMap}), pulumi.Parent(component))
 	if err != nil {
 		return nil, err
 	}
@@ -308,6 +270,7 @@ func NewTxCacheComponent(ctx *pulumi.Context, args TxCacheComponentArgs, opts ..
 	}
 
 	component.ServiceAccount = serviceAccount
+	component.ConfigMap = configMap
 	component.Deployment = txCacheDeployment
 	component.Service = txCacheService
 	component.VirtualService = virtualService

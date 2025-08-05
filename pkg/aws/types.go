@@ -93,25 +93,25 @@ func (p KMSPolicy) toInternal() kmsPolicyInternal {
 }
 
 type PostgresDbArgs struct {
-	DbSubnetGroupIds []string
-	DbUsername       string
-	DbPassword       string
-	DbName           string
+	DbSubnetGroupName string
+	DbUsername        string
+	DbPassword        string
+	DbName            string
 }
 
 type postgresDbArgsInternal struct {
-	DbSubnetGroupIds pulumi.StringArrayInput
-	DbUsername       pulumi.StringInput
-	DbPassword       pulumi.StringInput
-	DbName           pulumi.StringInput
+	DbSubnetGroupName pulumi.StringInput
+	DbUsername        pulumi.StringInput
+	DbPassword        pulumi.StringInput
+	DbName            pulumi.StringInput
 }
 
 func (args PostgresDbArgs) toInternal() postgresDbArgsInternal {
 	return postgresDbArgsInternal{
-		DbSubnetGroupIds: pulumi.ToStringArray(args.DbSubnetGroupIds),
-		DbUsername:       pulumi.String(args.DbUsername),
-		DbPassword:       pulumi.String(args.DbPassword),
-		DbName:           pulumi.String(args.DbName),
+		DbSubnetGroupName: pulumi.String(args.DbSubnetGroupName),
+		DbUsername:        pulumi.String(args.DbUsername),
+		DbPassword:        pulumi.String(args.DbPassword),
+		DbName:            pulumi.String(args.DbName),
 	}
 }
 

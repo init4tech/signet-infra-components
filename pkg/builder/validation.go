@@ -38,15 +38,6 @@ func (env *BuilderEnv) Validate() error {
 	if env.AwsSecretAccessKey == "" {
 		return fmt.Errorf("aws secret access key is required")
 	}
-	if env.BlockConfirmationBuffer == 0 {
-		return fmt.Errorf("block confirmation buffer is required")
-	}
-	if env.BlockQueryCutoff == 0 {
-		return fmt.Errorf("block query cutoff is required")
-	}
-	if env.BlockQueryStart == 0 {
-		return fmt.Errorf("block query start is required")
-	}
 	if env.BuilderHelperAddress == "" {
 		return fmt.Errorf("builder helper address is required")
 	}

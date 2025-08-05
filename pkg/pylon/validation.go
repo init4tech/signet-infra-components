@@ -38,8 +38,8 @@ func validateEnv(env PylonEnv) error {
 		return fmt.Errorf("pylonStartBlock is required")
 	}
 
-	if env.PylonSenderAddress == "" {
-		return fmt.Errorf("pylonSenderAddress is required")
+	if env.PylonSenders == "" {
+		return fmt.Errorf("pylonSenders is required")
 	}
 
 	if env.PylonS3Url == "" {
@@ -50,8 +50,8 @@ func validateEnv(env PylonEnv) error {
 		return fmt.Errorf("pylonS3Region is required")
 	}
 
-	if env.PylonConsensusClientUrl == "" {
-		return fmt.Errorf("pylonConsensusClientUrl is required")
+	if env.PylonClUrl == "" {
+		return fmt.Errorf("pylonClUrl is required")
 	}
 
 	if env.PylonBlobscanBaseUrl == "" {

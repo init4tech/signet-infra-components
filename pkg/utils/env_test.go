@@ -52,6 +52,10 @@ func TestCamelToSnake(t *testing.T) {
 		{"API", "API"},
 		{"APIVersion", "API_VERSION"},
 		{"SimpleHTTPServer", "SIMPLE_HTTP_SERVER"},
+		{"PylonS3Region", "PYLON_S3_REGION"},
+		{"EC2Instance", "EC2_INSTANCE"},
+		{"Part1Part2", "PART1_PART2"},
+		{"Version123Beta", "VERSION123_BETA"},
 	}
 
 	for _, test := range tests {

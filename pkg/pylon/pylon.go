@@ -35,13 +35,14 @@ func NewPylonComponent(ctx *pulumi.Context, args *PylonComponentArgs, opts ...pu
 
 	// Convert environment to internal type for use with ethereum components
 	internalEnv := args.Env.toInternal()
-
+	elName := fmt.Sprintf("%s-execution-client", args.Name)
+	clName := fmt.Sprintf("%s-consensus-client", args.Name)
 	// Create Ethereum node component
 	ethereumNodeArgs := &ethereum.EthereumNodeArgs{
 		Name:      args.Name,
 		Namespace: args.Namespace,
 		ExecutionClient: &execution.ExecutionClientArgs{
-			Name:               args.Name,
+			Name:               elName,
 			Namespace:          args.Namespace,
 			StorageSize:        ExecutionClientStorageSize,
 			StorageClass:       StorageClassAWSGP3,
@@ -57,7 +58,7 @@ func NewPylonComponent(ctx *pulumi.Context, args *PylonComponentArgs, opts ...pu
 			ExecutionClientEnv: internalEnv,
 		},
 		ConsensusClient: &consensus.ConsensusClientArgs{
-			Name:                    args.Name,
+			Name:                    clName,
 			Namespace:               args.Namespace,
 			StorageSize:             ConsensusClientStorageSize,
 			StorageClass:            StorageClassAWSGP3,

@@ -19,17 +19,14 @@ func NewPostgresDbComponent(ctx *pulumi.Context, args *PostgresDbArgs, opts ...p
 	}
 
 	// Create a VPC subnet group for the database
-	subnetGroup, err := rds.NewSubnetGroup(ctx, "dbClusterSubnetGroup", &rds.SubnetGroupArgs{
-		SubnetIds: internalArgs.DbSubnetGroupIds,
-		Name:      pulumi.Sprintf("%s-subnet-group", args.DbName),
-	}, pulumi.Parent(component))
+	subnetGroup, err := rds.GetSubnetGroup(ctx, "dbClusterSubnetGroup", pulumi.ID(args.DbSubnetGroupName), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	dbCluster, err := rds.NewCluster(ctx, "dbCluster", &rds.ClusterArgs{
 		Engine:         pulumi.String(rds.EngineTypeAuroraPostgresql),
-		EngineVersion:  pulumi.String("16.4"),
+		EngineVersion:  pulumi.String("16.6"),
 		DatabaseName:   internalArgs.DbName,
 		MasterUsername: internalArgs.DbUsername,
 		MasterPassword: internalArgs.DbPassword,

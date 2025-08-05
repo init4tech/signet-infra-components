@@ -62,8 +62,8 @@ func (p *KMSPolicy) Validate() error {
 }
 
 func validateDb(db PostgresDbArgs) error {
-	if db.DbSubnetGroupIds == nil {
-		return fmt.Errorf("dbSubnetGroupIds is required")
+	if db.DbSubnetGroupName == "" {
+		return fmt.Errorf("dbSubnetGroupName is required")
 	}
 
 	if db.DbUsername == "" {
