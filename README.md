@@ -1,97 +1,290 @@
 # Signet Infrastructure Components
 
-A collection of Pulumi infrastructure components for Signet blockchain services deployed to Kubernetes.
+A comprehensive Pulumi component library for deploying and managing Signet blockchain infrastructure on Kubernetes.
 
 ## Overview
 
-This repository contains reusable Pulumi components for deploying and managing Signet blockchain infrastructure. Each component is packaged as a separate Go module that can be imported into your Pulumi projects.
+This repository provides production-ready, reusable Pulumi components for deploying blockchain infrastructure services. Built with Go and designed for Kubernetes, these components offer a consistent, validated approach to infrastructure as code for blockchain operations.
+
+## Features
+
+- **Type-Safe Infrastructure**: Strongly typed Go interfaces with comprehensive validation
+- **AWS Integration**: Built-in support for IAM roles, S3 buckets, and RDS databases
+- **Kubernetes Native**: Deploy to any Kubernetes cluster with standard resources
+- **Component Composition**: Complex services built from reusable sub-components
+- **Production Ready**: Health checks, resource limits, and monitoring built-in
 
 ## Components
 
-### Builder
+### Core Blockchain Services
 
-The `builder` component deploys a Signet builder service to Kubernetes. It creates the necessary resources:
+#### Builder (`pkg/builder/`)
+Deploys a Signet builder service for blockchain operations.
 
-- Kubernetes Deployment
-- Kubernetes Service
-- Service Account
-- IAM Role and Policies
-- Prometheus monitoring
+**Resources Created:**
+- Kubernetes Deployment with configurable replicas
+- Service (ClusterIP) for internal access
+- ServiceAccount with optional AWS IAM role
+- ConfigMap for environment configuration
+- Persistent Volume Claims for data storage
 
-#### Usage
+#### Signet Node (`pkg/signet_node/`)
+Core Signet blockchain node implementation.
 
-```go
-import (
-    "github.com/your-org/signet-infra-components/builder"
-)
+**Resources Created:**
+- StatefulSet for node persistence
+- Service for peer-to-peer and RPC access
+- PersistentVolumeClaim for blockchain data
+- ConfigMap for node configuration
 
-func main() {
-    // Create a new builder component
-    builderComponent, err := builder.NewBuilder(ctx, builder.BuilderComponentArgs{
-        Namespace: "signet",
-        Name:      "signet-builder",
-        Image:     "your-registry/builder:latest",
-        AppLabels: builder.AppLabels{
-            Labels: pulumi.StringMap{
-                "app": pulumi.String("builder"),
-            },
-        },
-        BuilderEnv: builder.BuilderEnv{
-            BuilderPort:    pulumi.Int(8080),
-            BuilderKey:     pulumi.String("arn:aws:kms:region:account:key/keyid"),
-            HostRpcUrl:     pulumi.String("https://ethereum-rpc.example.com"),
-            RollupRpcUrl:   pulumi.String("https://rollup-rpc.example.com"),
-            // Add other required environment variables
-        },
-    })
-    if err != nil {
-        // Handle error
-    }
+#### Transaction Cache (`pkg/txcache/`)
+High-performance transaction caching service.
 
-    // Export the service URL
-    ctx.Export("builderServiceUrl", builderComponent.GetServiceURL("signet-builder", "signet"))
-}
-```
+**Resources Created:**
+- Deployment with memory-optimized configuration
+- Service for cache access
+- ConfigMap for cache settings
+- Optional Redis backend support
 
-## Adding New Components
+### Ethereum Infrastructure
 
-To add a new component:
+#### Ethereum Node (`pkg/ethereum/`)
+Composite component that manages both execution and consensus clients as a complete Ethereum node.
 
-1. Create a new directory with the component name
-2. Implement the component following the same structure as the `builder` component:
-   - `types.go` - Define component types and interfaces
-   - `[component].go` - Implement the main component logic
-   - `validation.go` - Implement input validation
-   - `helpers.go` - Add helper functions
+**Sub-components:**
+- **Execution Client** (`pkg/ethereum/execution/`): Reth or compatible execution layer
+- **Consensus Client** (`pkg/ethereum/consensus/`): Lighthouse Beacon chain consensus layer
 
-## Development
+**Features:**
+- Automatic JWT secret management
+- Inter-client communication setup
 
-### Prerequisites
+### Specialized Services
 
-- Go 1.20+
-- Pulumi CLI
-- Access to a Kubernetes cluster
+#### eRPC Proxy (`pkg/erpc-proxy/`)
+Advanced RPC proxy with load balancing and failover capabilities.
 
-### Testing Components
+**Features:**
+- Multi-network support with chain-specific routing
+- Configurable failover strategies
+- Rate limiting per project/upstream
+- Support for multiple upstream types (HTTP, WebSocket, Alchemy, Infura, etc.)
 
-You can test components by creating a simple Pulumi program that uses them:
+**Resources Created:**
+- Deployment with health probes
+- Service for RPC access
+- ConfigMap for complex routing configuration
+- Secret for API keys
+- ServiceAccount for pod identity
+
+#### Pylon (`pkg/pylon/`)
+Ethereum Blob cold storage client
+
+**Features:**
+- Deploys an ExEx on top of a Reth/Lighthouse pair
+- S3 integration for blob storage
+- PostgreSQL database support
+- Custom environment configuration
+
+#### Quincey (`pkg/quincey/`)
+Quincey service component for specialized blockchain operations.
+
+### AWS Integration (`pkg/aws/`)
+
+#### IAM Roles
+Create and manage AWS IAM roles for Kubernetes service accounts (IRSA).
+
+#### PostgreSQL Database
+Provision RDS PostgreSQL instances with:
+- Automated backups
+- Security group configuration
+- Parameter group customization
+- Connection string management
+
+### Utilities (`pkg/utils/`)
+Shared helper functions for:
+- Resource labeling
+- ConfigMap creation
+- Port parsing with defaults
+- Environment variable management
+
+## Usage Example
 
 ```go
 package main
 
 import (
     "github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-    "github.com/your-org/signet-infra-components/builder"
+    "github.com/init4tech/signet-infra-components/pkg/builder"
+    "github.com/init4tech/signet-infra-components/pkg/erpc-proxy"
+    "github.com/init4tech/signet-infra-components/pkg/ethereum"
 )
 
 func main() {
     pulumi.Run(func(ctx *pulumi.Context) error {
-        // Test your component here
+        // Deploy a builder service
+        builder, err := builder.NewBuilder(ctx, builder.BuilderComponentArgs{
+            Namespace: "signet",
+            Name:      "signet-builder",
+            Image:     "your-registry/builder:latest",
+            BuilderEnv: builder.BuilderEnv{
+                // Configuration
+            },
+        })
+        if err != nil {
+            return err
+        }
+
+        // Deploy an eRPC proxy
+        proxy, err := erpcproxy.NewErpcProxy(ctx, erpcproxy.ErpcProxyComponentArgs{
+            Namespace: "signet",
+            Name:      "erpc-proxy",
+            Image:     "ghcr.io/erpc/erpc:latest",
+            Config: erpcproxy.ErpcProxyConfig{
+                LogLevel: "info",
+                Projects: []erpcproxy.ErpcProxyProjectConfig{
+                    {
+                        Id: "mainnet",
+                        Networks: []erpcproxy.ErpcProxyNetworkConfig{
+                            {
+                                ChainId:      1,
+                                Architecture: "evm",
+                                Upstreams: []erpcproxy.ErpcProxyUpstreamConfig{
+                                    {
+                                        Id:       "primary",
+                                        Type:     "http",
+                                        Endpoint: "https://eth-mainnet.example.com",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        })
+        if err != nil {
+            return err
+        }
+
+        // Deploy a complete Ethereum node
+        ethNode, err := ethereum.NewEthereumNodeComponent(ctx, &ethereum.EthereumNodeArgs{
+            Name:      "eth-node",
+            Namespace: "signet",
+            ExecutionClient: &execution.ExecutionClientArgs{
+                // Execution configuration
+            },
+            ConsensusClient: &consensus.ConsensusClientArgs{
+                // Consensus configuration
+            },
+        })
+        if err != nil {
+            return err
+        }
+
+        // Export service endpoints
+        ctx.Export("builderUrl", builder.GetServiceURL())
+        ctx.Export("erpcUrl", proxy.GetServiceURL())
+        
         return nil
     })
 }
 ```
 
+## Development
+
+### Prerequisites
+
+- Go 1.22+ (CI uses 1.22, go.mod specifies 1.24.3)
+- Pulumi CLI 3.x
+- Access to a Kubernetes cluster
+- AWS credentials (for AWS-integrated components)
+
+### Project Structure
+
+```
+signet-infra-components/
+├── pkg/
+│   ├── aws/              # AWS resource components
+│   ├── builder/          # Builder service
+│   ├── erpc-proxy/       # eRPC proxy service
+│   ├── ethereum/         # Ethereum node components
+│   │   ├── consensus/    # Consensus client
+│   │   └── execution/    # Execution client
+│   ├── pylon/           # Pylon service
+│   ├── quincey/         # Quincey service
+│   ├── signet_node/     # Signet node
+│   ├── txcache/         # Transaction cache
+│   └── utils/           # Shared utilities
+├── go.mod
+├── go.sum
+├── README.md
+└── CLAUDE.md            # AI assistant guidelines
+```
+
+### Building and Testing
+
+```bash
+# Build all packages
+go build -v ./...
+
+# Run all tests
+go test -v ./...
+
+# Run tests for a specific package
+go test -v ./pkg/builder
+
+# Verify dependencies
+go mod verify
+
+# Update dependencies
+go mod tidy
+```
+
+### Adding New Components
+
+1. **Create Package Directory**: `mkdir -p pkg/your-component`
+
+2. **Implement Required Files**:
+   - `types.go` - Public and internal type definitions
+   - `your-component.go` - Main component implementation
+   - `validation.go` - Input validation logic
+   - `validation_test.go` - Unit tests
+   - `constants.go` - Component constants (optional)
+   - `helpers.go` - Helper functions (optional)
+
+3. **Follow Design Patterns**:
+   - Use dual-struct pattern (public/internal types)
+   - Implement comprehensive validation
+   - Create standard Kubernetes resources
+   - Add health probes where applicable
+
+4. **Test Thoroughly**:
+   - Write table-driven tests
+   - Cover validation edge cases
+   - Aim for high test coverage
+
+See [CLAUDE.md](CLAUDE.md) for detailed architectural patterns and best practices.
+
+## Component Configuration
+
+### Monitoring
+
+Components expose Prometheus metrics on configurable ports, typically:
+- Application metrics: `/metrics`
+- Health endpoint: `/healthcheck` or `/health`
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Follow the component patterns described in CONTRIBUTING.md
+4. Ensure all tests pass
+5. Submit a pull request
+
+## Support
+
+For issues, questions, or contributions, please open an issue on GitHub.
+
 ## License
 
-MIT License see [LICENSE](LICENSE)
+MIT License - see [LICENSE](LICENSE) for details.
