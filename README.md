@@ -64,18 +64,55 @@ Composite component that manages both execution and consensus clients as a compl
 #### eRPC Proxy (`pkg/erpc-proxy/`)
 Advanced RPC proxy with load balancing and failover capabilities.
 
-**Features:**
-- Multi-network support with chain-specific routing
-- Configurable failover strategies
-- Rate limiting per project/upstream
-- Support for multiple upstream types (HTTP, WebSocket, Alchemy, Infura, etc.)
-
 **Resources Created:**
 - Deployment with health probes
 - Service for RPC access
 - ConfigMap for complex routing configuration
 - Secret for API keys
 - ServiceAccount for pod identity
+
+**Example:**
+```go
+		_, err = erpcproxy.NewErpcProxy(ctx, erpcproxy.ErpcProxyComponentArgs{
+			Namespace: "default",
+			Name:      "rpc-erpc-proxy",
+			Config: erpcproxy.ErpcProxyConfig{
+				Server: erpcproxy.ErpcProxyServerConfig{
+					HttpHostV4: "0.0.0.0",
+					HttpPortV4: 8545,
+					MaxTimeout: "60s",
+				},
+				Projects: []erpcproxy.ErpcProxyProjectConfig{
+					{
+						Id: "rpc",
+						Networks: []erpcproxy.ErpcProxyNetworkConfig{
+							{
+								ChainId:      1,
+								Architecture: "evm",
+							},
+						},
+						Upstreams: []erpcproxy.ErpcProxyUpstreamConfig{
+							{
+								Id:       "rpc",
+								Type:     "evm",
+								Endpoint: "http://some-rpc-service.default.svc.cluster.local:8545",
+							},
+						},
+					},
+				},
+			},
+			Resources: erpcproxy.ErpcProxyResources{
+				MemoryRequest: "1Gi",
+				MemoryLimit:   "2Gi",
+				CpuRequest:    "100m",
+				CpuLimit:      "200m",
+			},
+			Replicas: 1,
+		})
+		if err != nil {
+			return err
+		}
+```
 
 #### Pylon (`pkg/pylon/`)
 Ethereum Blob cold storage client
