@@ -25,22 +25,6 @@ func NewPylonComponent(ctx *pulumi.Context, args *PylonComponentArgs, opts ...pu
 	// Convert public args to internal args
 	internalArgs := args.toInternal()
 
-	stack := ctx.Stack()
-
-	// Get the existing Route53 hosted zone for signet.sh
-	dbProjectName := internalArgs.DbProjectName
-	dbStackName := fmt.Sprintf("%s/%s", dbProjectName, stack)
-
-	// TODO: this should be a stack reference to the pylon db stack- should this be an arg?
-	// Need to think about how i want to handle the separation of the pylon db and pylon components
-	thePylonDbStack, err := pulumi.NewStackReference(ctx, dbStackName, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get the database cluster endpoint (unused for now but needed for future implementation)
-	_ = thePylonDbStack.GetStringOutput(pulumi.String("dbClusterEndpoint"))
-
 	// Create the S3 bucket for blob storage (unused for now but needed for future implementation)
 	_, err = s3.NewBucketV2(ctx, "pylon-blob-bucket", &s3.BucketV2Args{
 		Bucket: internalArgs.PylonBlobBucketName,
@@ -51,17 +35,19 @@ func NewPylonComponent(ctx *pulumi.Context, args *PylonComponentArgs, opts ...pu
 
 	// Convert environment to internal type for use with ethereum components
 	internalEnv := args.Env.toInternal()
-
+	elName := fmt.Sprintf("%s-execution-client", args.Name)
+	clName := fmt.Sprintf("%s-consensus-client", args.Name)
 	// Create Ethereum node component
 	ethereumNodeArgs := &ethereum.EthereumNodeArgs{
 		Name:      args.Name,
 		Namespace: args.Namespace,
 		ExecutionClient: &execution.ExecutionClientArgs{
-			Name:               args.Name,
+			Name:               elName,
 			Namespace:          args.Namespace,
 			StorageSize:        ExecutionClientStorageSize,
 			StorageClass:       StorageClassAWSGP3,
 			Image:              args.PylonImage,
+			ImagePullPolicy:    ImagePullPolicyAlways,
 			JWTSecret:          args.ExecutionJwt,
 			P2PPort:            ExecutionP2PPort,
 			RPCPort:            ExecutionRPCPort,
@@ -72,14 +58,17 @@ func NewPylonComponent(ctx *pulumi.Context, args *PylonComponentArgs, opts ...pu
 			ExecutionClientEnv: internalEnv,
 		},
 		ConsensusClient: &consensus.ConsensusClientArgs{
-			Name:            args.Name,
-			Namespace:       args.Namespace,
-			StorageSize:     ConsensusClientStorageSize,
-			StorageClass:    StorageClassAWSGP3,
-			Image:           ConsensusClientImage,
-			ImagePullPolicy: ImagePullPolicyAlways,
-			BeaconAPIPort:   ConsensusBeaconAPIPort,
-			MetricsPort:     ConsensusMetricsPort,
+			Name:                    clName,
+			Namespace:               args.Namespace,
+			StorageSize:             ConsensusClientStorageSize,
+			StorageClass:            StorageClassAWSGP3,
+			JWTSecret:               args.ExecutionJwt,
+			P2PPort:                 ExecutionP2PPort,
+			Image:                   ConsensusClientImage,
+			ImagePullPolicy:         ImagePullPolicyAlways,
+			BeaconAPIPort:           ConsensusBeaconAPIPort,
+			MetricsPort:             ConsensusMetricsPort,
+			ExecutionClientEndpoint: fmt.Sprintf("http://%s-service.%s.svc.cluster.local:%d", args.Name, args.Namespace, ExecutionRPCPort),
 		},
 	}
 

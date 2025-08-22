@@ -33,7 +33,6 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 	pvcName := fmt.Sprintf("%s-data", args.Name)
 	component.PVC, err = corev1.NewPersistentVolumeClaim(ctx, pvcName, &corev1.PersistentVolumeClaimArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(pvcName),
 			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, pvcName, args.Name, nil),
 		},
@@ -53,6 +52,10 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 		return nil, fmt.Errorf("failed to create PVC: %w", err)
 	}
 
+	pvcNameInput := component.PVC.Metadata.Name().ApplyT(func(name *string) pulumi.StringInput {
+		return pulumi.String(*name)
+	}).(pulumi.StringInput)
+
 	// Create JWT secret
 	jwtSecretName := fmt.Sprintf("%s-jwt", args.Name)
 	component.JWTSecret, err = corev1.NewSecret(ctx, jwtSecretName, &corev1.SecretArgs{
@@ -60,7 +63,6 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 			"jwt.hex": internalArgs.JWTSecret,
 		},
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(jwtSecretName),
 			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, jwtSecretName, args.Name, nil),
 		},
@@ -73,7 +75,6 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 	p2pServiceName := fmt.Sprintf("%s-p2p", args.Name)
 	component.P2PService, err = corev1.NewService(ctx, p2pServiceName, &corev1.ServiceArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(p2pServiceName),
 			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, p2pServiceName, args.Name, nil),
 		},
@@ -99,7 +100,6 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 	beaconAPIServiceName := fmt.Sprintf("%s-beacon-api", args.Name)
 	component.BeaconAPIService, err = corev1.NewService(ctx, beaconAPIServiceName, &corev1.ServiceArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(beaconAPIServiceName),
 			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, beaconAPIServiceName, args.Name, nil),
 		},
@@ -129,7 +129,6 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 	statefulSetName := args.Name
 	component.StatefulSet, err = appsv1.NewStatefulSet(ctx, statefulSetName, &appsv1.StatefulSetArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(statefulSetName),
 			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, statefulSetName, args.Name, nil),
 		},
@@ -185,13 +184,13 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 						corev1.VolumeArgs{
 							Name: pulumi.String("data"),
 							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSourceArgs{
-								ClaimName: pulumi.String(pvcName),
+								ClaimName: pvcNameInput,
 							},
 						},
 						corev1.VolumeArgs{
 							Name: pulumi.String("jwt"),
 							Secret: &corev1.SecretVolumeSourceArgs{
-								SecretName: pulumi.String(jwtSecretName),
+								SecretName: component.JWTSecret.Metadata.Name(),
 							},
 						},
 					},
@@ -206,22 +205,26 @@ func NewConsensusClient(ctx *pulumi.Context, args *ConsensusClientArgs, opts ...
 	}
 
 	return component, nil
-	return component, nil
 }
 
 // createConsensusClientCommand creates the command array for the consensus client
 func createConsensusClientCommand(args *ConsensusClientArgs) pulumi.StringArray {
 	cmd := pulumi.StringArray{
-		pulumi.String("--datadir=/data"),
+		pulumi.String("lighthouse"),
+		pulumi.String("bn"),
+		pulumi.String("--datadir=/data/lighthouse"),
+		pulumi.String("--http"),
+		pulumi.Sprintf("--http-port=%d", args.BeaconAPIPort),
+		pulumi.String("--http-address=0.0.0.0"),
 		pulumi.Sprintf("--execution-jwt=/etc/execution/jwt/jwt.hex"),
 		pulumi.Sprintf("--execution-endpoint=%s", args.ExecutionClientEndpoint),
 		pulumi.Sprintf("--port=%d", args.P2PPort),
+		pulumi.String("--metrics"),
 		pulumi.Sprintf("--metrics-port=%d", args.MetricsPort),
-		pulumi.Sprintf("--http-port=%d", args.BeaconAPIPort),
-		pulumi.String("--http-address=0.0.0.0"),
 		pulumi.String("--metrics-address=0.0.0.0"),
 		pulumi.String("--validator-monitor-auto"),
 		pulumi.String("--suggested-fee-recipient=0x0000000000000000000000000000000000000000"),
+		pulumi.String("--checkpoint-sync-url=https://mainnet.checkpoint.sigp.io"),
 	}
 
 	// Add bootnodes

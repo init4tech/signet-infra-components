@@ -57,14 +57,14 @@ func TestCreateContainer(t *testing.T) {
 // TestQuinceyEnv tests the environment variable handling
 func TestQuinceyEnv(t *testing.T) {
 	env := QuinceyEnv{
-		QuinceyPort:              8080,
+		QuinceyPort:              "8080",
 		QuinceyKeyId:             "test-key-id",
 		AwsAccessKeyId:           "test-aws-key",
 		AwsSecretAccessKey:       "test-aws-secret",
 		AwsDefaultRegion:         "us-west-2",
-		BlockQueryStart:          1,
-		BlockQueryCutoff:         1000,
-		ChainOffset:              10,
+		BlockQueryStart:          "1",
+		BlockQueryCutoff:         "1000",
+		ChainOffset:              "10",
 		HostRpcUrl:               "http://test-rpc:8545",
 		OauthIssuer:              "https://test-issuer",
 		OauthJwksUri:             "https://test-jwks",
@@ -75,14 +75,14 @@ func TestQuinceyEnv(t *testing.T) {
 	}
 
 	// Test that the environment variables are properly set
-	assert.Equal(t, 8080, env.QuinceyPort)
+	assert.Equal(t, "8080", env.QuinceyPort)
 	assert.Equal(t, "test-key-id", env.QuinceyKeyId)
 	assert.Equal(t, "test-aws-key", env.AwsAccessKeyId)
 	assert.Equal(t, "test-aws-secret", env.AwsSecretAccessKey)
 	assert.Equal(t, "us-west-2", env.AwsDefaultRegion)
-	assert.Equal(t, 1, env.BlockQueryStart)
-	assert.Equal(t, 1000, env.BlockQueryCutoff)
-	assert.Equal(t, 10, env.ChainOffset)
+	assert.Equal(t, "1", env.BlockQueryStart)
+	assert.Equal(t, "1000", env.BlockQueryCutoff)
+	assert.Equal(t, "10", env.ChainOffset)
 	assert.Equal(t, "http://test-rpc:8545", env.HostRpcUrl)
 	assert.Equal(t, "https://test-issuer", env.OauthIssuer)
 	assert.Equal(t, "https://test-jwks", env.OauthJwksUri)
@@ -110,14 +110,14 @@ func TestQuinceyEnvValidation(t *testing.T) {
 		{
 			name: "valid env with all required fields",
 			env: QuinceyEnv{
-				QuinceyPort:              8080,
+				QuinceyPort:              "8080",
 				QuinceyKeyId:             "test-key-id",
 				AwsAccessKeyId:           "test-aws-key",
 				AwsSecretAccessKey:       "test-aws-secret",
 				AwsDefaultRegion:         "us-west-2",
-				BlockQueryStart:          1,
-				BlockQueryCutoff:         1000,
-				ChainOffset:              10,
+				BlockQueryStart:          "1",
+				BlockQueryCutoff:         "1000",
+				ChainOffset:              "10",
 				HostRpcUrl:               "http://test-rpc:8545",
 				OauthIssuer:              "https://test-issuer",
 				OauthJwksUri:             "https://test-jwks",
@@ -135,9 +135,9 @@ func TestQuinceyEnvValidation(t *testing.T) {
 				AwsAccessKeyId:           "test-aws-key",
 				AwsSecretAccessKey:       "test-aws-secret",
 				AwsDefaultRegion:         "us-west-2",
-				BlockQueryStart:          1,
-				BlockQueryCutoff:         1000,
-				ChainOffset:              10,
+				BlockQueryStart:          "1",
+				BlockQueryCutoff:         "1000",
+				ChainOffset:              "10",
 				HostRpcUrl:               "http://test-rpc:8545",
 				OauthIssuer:              "https://test-issuer",
 				OauthJwksUri:             "https://test-jwks",
@@ -151,13 +151,13 @@ func TestQuinceyEnvValidation(t *testing.T) {
 		{
 			name: "missing required field QuinceyKeyId",
 			env: QuinceyEnv{
-				QuinceyPort:              8080,
+				QuinceyPort:              "8080",
 				AwsAccessKeyId:           "test-aws-key",
 				AwsSecretAccessKey:       "test-aws-secret",
 				AwsDefaultRegion:         "us-west-2",
-				BlockQueryStart:          1,
-				BlockQueryCutoff:         1000,
-				ChainOffset:              10,
+				BlockQueryStart:          "1",
+				BlockQueryCutoff:         "1000",
+				ChainOffset:              "10",
 				HostRpcUrl:               "http://test-rpc:8545",
 				OauthIssuer:              "https://test-issuer",
 				OauthJwksUri:             "https://test-jwks",
@@ -171,14 +171,14 @@ func TestQuinceyEnvValidation(t *testing.T) {
 		{
 			name: "missing optional fields",
 			env: QuinceyEnv{
-				QuinceyPort:        8080,
+				QuinceyPort:        "8080",
 				QuinceyKeyId:       "test-key-id",
 				AwsAccessKeyId:     "test-aws-key",
 				AwsSecretAccessKey: "test-aws-secret",
 				AwsDefaultRegion:   "us-west-2",
-				BlockQueryStart:    1,
-				BlockQueryCutoff:   1000,
-				ChainOffset:        10,
+				BlockQueryStart:    "1",
+				BlockQueryCutoff:   "1000",
+				ChainOffset:        "10",
 				HostRpcUrl:         "http://test-rpc:8545",
 				OauthIssuer:        "https://test-issuer",
 				OauthJwksUri:       "https://test-jwks",

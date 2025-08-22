@@ -217,3 +217,76 @@ func CreateKMSPolicyFromPublic(policy KMSPolicy) (pulumi.StringOutput, error) {
 		return string(jsonBytes), nil
 	}).(pulumi.StringOutput), nil
 }
+
+func CreateEcrDeployPolicy(ctx *pulumi.Context, awsAccountId string, repositoryName string) (*iam.GetPolicyDocumentResult, error) {
+	policyDocument, err := iam.GetPolicyDocument(ctx, &iam.GetPolicyDocumentArgs{
+		Version: pulumi.StringRef("2012-10-17"),
+		Statements: []iam.GetPolicyDocumentStatement{
+			{
+				Effect: pulumi.StringRef("Allow"),
+				Actions: []string{
+					"ecr:GetDownloadUrlForLayer",
+					"ecr:BatchGetImage",
+					"ecr:BatchCheckLayerAvailability",
+					"ecr:PutImage",
+					"ecr:InitiateLayerUpload",
+					"ecr:UploadLayerPart",
+					"ecr:CompleteLayerUpload",
+				},
+				Resources: []string{
+					fmt.Sprintf("arn:aws:ecr:us-east-1:%s:repository/%s", awsAccountId, repositoryName),
+				},
+			},
+			{
+				Effect: pulumi.StringRef("Allow"),
+				Actions: []string{
+					"ecr:GetAuthorizationToken",
+				},
+				Resources: []string{
+					"*",
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return policyDocument, nil
+
+}
+
+func CreateGithubAssumeRolePolicy(ctx *pulumi.Context, awsAccountId string, githubOrganization string, githubRepository string) (*iam.GetPolicyDocumentResult, error) {
+	policyDocument, err := iam.GetPolicyDocument(ctx, &iam.GetPolicyDocumentArgs{
+		Version: pulumi.StringRef("2012-10-17"),
+		Statements: []iam.GetPolicyDocumentStatement{
+			{
+				Effect: pulumi.StringRef("Allow"),
+				Principals: []iam.GetPolicyDocumentStatementPrincipal{
+					{
+						Type:        "Federated",
+						Identifiers: []string{fmt.Sprintf("arn:aws:iam::%s:oidc-provider/token.actions.githubusercontent.com", awsAccountId)},
+					},
+				},
+				Actions: []string{"sts:AssumeRoleWithWebIdentity"},
+				Conditions: []iam.GetPolicyDocumentStatementCondition{
+					{
+						Test:     "StringEquals",
+						Variable: "token.actions.githubusercontent.com:aud",
+						Values:   []string{"sts.amazonaws.com"},
+					},
+					{
+						Test:     "StringLike",
+						Variable: "token.actions.githubusercontent.com:sub",
+						Values:   []string{fmt.Sprintf("repo:%s/%s:*", githubOrganization, githubRepository)},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return policyDocument, nil
+}

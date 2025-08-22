@@ -108,18 +108,18 @@ func CamelToSnake(s string) string {
 		// Determine if we need to add an underscore before this character
 		shouldAddUnderscore := false
 
-		if unicode.IsUpper(currentRune) && i > 0 {
+		if i > 0 {
 			prevRune := runes[i-1]
 
 			// Pattern 1: lowercase followed by uppercase (word boundary)
 			// "camelCase" -> "CAMEL_CASE"
-			if unicode.IsLower(prevRune) {
+			if unicode.IsUpper(currentRune) && unicode.IsLower(prevRune) {
 				shouldAddUnderscore = true
 			}
 
 			// Pattern 2: End of acronym detection
 			// "APIVersion" -> "API_VERSION" (at 'V')
-			if hasNextChar := i < len(runes)-1; hasNextChar {
+			if unicode.IsUpper(currentRune) && i < len(runes)-1 {
 				nextRune := runes[i+1]
 				isEndOfAcronym := unicode.IsLower(nextRune) &&
 					i > 1 &&
@@ -128,6 +128,12 @@ func CamelToSnake(s string) string {
 				if isEndOfAcronym {
 					shouldAddUnderscore = true
 				}
+			}
+
+			// Pattern 3: number followed by letter (word boundary)
+			// "PylonS3Region" -> "PYLON_S3_REGION"
+			if unicode.IsLetter(currentRune) && unicode.IsDigit(prevRune) {
+				shouldAddUnderscore = true
 			}
 		}
 

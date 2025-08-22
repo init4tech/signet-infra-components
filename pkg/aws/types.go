@@ -4,6 +4,7 @@
 package aws
 
 import (
+	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/rds"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
@@ -89,4 +90,35 @@ func (p KMSPolicy) toInternal() kmsPolicyInternal {
 		Version:   p.Version,
 		Statement: statements,
 	}
+}
+
+type PostgresDbArgs struct {
+	DbSubnetGroupName string
+	DbUsername        string
+	DbPassword        string
+	DbName            string
+}
+
+type postgresDbArgsInternal struct {
+	DbSubnetGroupName pulumi.StringInput
+	DbUsername        pulumi.StringInput
+	DbPassword        pulumi.StringInput
+	DbName            pulumi.StringInput
+}
+
+func (args PostgresDbArgs) toInternal() postgresDbArgsInternal {
+	return postgresDbArgsInternal{
+		DbSubnetGroupName: pulumi.String(args.DbSubnetGroupName),
+		DbUsername:        pulumi.String(args.DbUsername),
+		DbPassword:        pulumi.String(args.DbPassword),
+		DbName:            pulumi.String(args.DbName),
+	}
+}
+
+type PostgresDbComponent struct {
+	pulumi.ResourceState
+	DbCluster         *rds.Cluster
+	DbClusterInstance *rds.ClusterInstance
+	DbClusterEndpoint pulumi.StringOutput
+	DbSubnetGroup     *rds.SubnetGroup
 }

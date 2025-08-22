@@ -27,7 +27,6 @@ func CreatePersistentVolumeClaim(
 
 	pvc, err := corev1.NewPersistentVolumeClaim(ctx, name, &corev1.PersistentVolumeClaimArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name: pulumi.String(name),
 			Labels: pulumi.StringMap{
 				"app.kubernetes.io/name":    pulumi.String(name),
 				"app.kubernetes.io/part-of": pulumi.String(name),
