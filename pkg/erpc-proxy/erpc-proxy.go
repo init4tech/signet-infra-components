@@ -16,30 +16,40 @@ import (
 func NewErpcProxy(ctx *pulumi.Context, args ErpcProxyComponentArgs, opts ...pulumi.ResourceOption) (*ErpcProxyComponent, error) {
 	// Apply defaults
 	if args.Image == "" {
+		// Log that using default image
+		ctx.Log.Info(fmt.Sprintf("Using default image: %s", DefaultImage), nil)
 		args.Image = DefaultImage
 	}
 	if args.Config.LogLevel == "" {
+		ctx.Log.Info(fmt.Sprintf("Using default log level: %s", DefaultLogLevel), nil)
 		args.Config.LogLevel = DefaultLogLevel
 	}
-	if args.Config.Server.HttpPort == 0 {
-		args.Config.Server.HttpPort = DefaultHttpPort
+	if args.Config.Server.HttpPortV4 == 0 {
+		ctx.Log.Info(fmt.Sprintf("Using default HTTP port: %d", DefaultHttpPort), nil)
+		args.Config.Server.HttpPortV4 = DefaultHttpPort
 	}
-	if args.Config.Server.MaxTimeoutMs == 0 {
-		args.Config.Server.MaxTimeoutMs = DefaultMaxTimeoutMs
+	if args.Config.Server.MaxTimeout == "" {
+		ctx.Log.Info(fmt.Sprintf("Using default max timeout: %d", DefaultMaxTimeoutMs), nil)
+		args.Config.Server.MaxTimeout = DefaultMaxTimeoutMs
 	}
 	if args.Resources.MemoryRequest == "" {
+		ctx.Log.Info(fmt.Sprintf("Using default memory request: %s", DefaultMemoryRequest), nil)
 		args.Resources.MemoryRequest = DefaultMemoryRequest
 	}
 	if args.Resources.MemoryLimit == "" {
+		ctx.Log.Info(fmt.Sprintf("Using default memory limit: %s", DefaultMemoryLimit), nil)
 		args.Resources.MemoryLimit = DefaultMemoryLimit
 	}
 	if args.Resources.CpuRequest == "" {
+		ctx.Log.Info(fmt.Sprintf("Using default CPU request: %s", DefaultCpuRequest), nil)
 		args.Resources.CpuRequest = DefaultCpuRequest
 	}
 	if args.Resources.CpuLimit == "" {
+		ctx.Log.Info(fmt.Sprintf("Using default CPU limit: %s", DefaultCpuLimit), nil)
 		args.Resources.CpuLimit = DefaultCpuLimit
 	}
 	if args.Replicas == 0 {
+		ctx.Log.Info(fmt.Sprintf("Using default replicas: %d", DefaultReplicas), nil)
 		args.Replicas = DefaultReplicas
 	}
 
@@ -163,12 +173,14 @@ func NewErpcProxy(ctx *pulumi.Context, args ErpcProxyComponentArgs, opts ...pulu
 						&corev1.ContainerArgs{
 							Name:    pulumi.String(args.Name),
 							Image:   internalArgs.Image,
+							Args:    pulumi.StringArray{pulumi.Sprintf("%s/%s", ConfigMountPath, ConfigFileName)},
+							Command: pulumi.StringArray{pulumi.String("/erpc-server")},
 							Env:     envVars,
 							EnvFrom: envFromSources,
 							Ports: corev1.ContainerPortArray{
 								&corev1.ContainerPortArgs{
 									Name:          pulumi.String("http"),
-									ContainerPort: pulumi.Int(args.Config.Server.HttpPort),
+									ContainerPort: pulumi.Int(args.Config.Server.HttpPortV4),
 									Protocol:      pulumi.String("TCP"),
 								},
 								&corev1.ContainerPortArgs{
@@ -191,13 +203,13 @@ func NewErpcProxy(ctx *pulumi.Context, args ErpcProxyComponentArgs, opts ...pulu
 								&corev1.VolumeMountArgs{
 									Name:      pulumi.String("config"),
 									MountPath: pulumi.String(ConfigMountPath),
-									ReadOnly:  pulumi.Bool(true),
+									ReadOnly:  pulumi.Bool(false),
 								},
 							},
 							LivenessProbe: &corev1.ProbeArgs{
 								HttpGet: &corev1.HTTPGetActionArgs{
 									Path: pulumi.String("/healthcheck"),
-									Port: pulumi.Int(args.Config.Server.HttpPort),
+									Port: pulumi.Int(args.Config.Server.HttpPortV4),
 								},
 								InitialDelaySeconds: pulumi.Int(30),
 								PeriodSeconds:       pulumi.Int(10),
@@ -207,7 +219,7 @@ func NewErpcProxy(ctx *pulumi.Context, args ErpcProxyComponentArgs, opts ...pulu
 							ReadinessProbe: &corev1.ProbeArgs{
 								HttpGet: &corev1.HTTPGetActionArgs{
 									Path: pulumi.String("/healthcheck"),
-									Port: pulumi.Int(args.Config.Server.HttpPort),
+									Port: pulumi.Int(args.Config.Server.HttpPortV4),
 								},
 								InitialDelaySeconds: pulumi.Int(10),
 								PeriodSeconds:       pulumi.Int(5),
@@ -217,7 +229,7 @@ func NewErpcProxy(ctx *pulumi.Context, args ErpcProxyComponentArgs, opts ...pulu
 							StartupProbe: &corev1.ProbeArgs{
 								HttpGet: &corev1.HTTPGetActionArgs{
 									Path: pulumi.String("/healthcheck"),
-									Port: pulumi.Int(args.Config.Server.HttpPort),
+									Port: pulumi.Int(args.Config.Server.HttpPortV4),
 								},
 								InitialDelaySeconds: pulumi.Int(0),
 								PeriodSeconds:       pulumi.Int(10),
@@ -230,7 +242,8 @@ func NewErpcProxy(ctx *pulumi.Context, args ErpcProxyComponentArgs, opts ...pulu
 						&corev1.VolumeArgs{
 							Name: pulumi.String("config"),
 							ConfigMap: &corev1.ConfigMapVolumeSourceArgs{
-								Name: component.ConfigMap.Metadata.Name(),
+								Name:        component.ConfigMap.Metadata.Name(),
+								DefaultMode: pulumi.Int(0644),
 							},
 						},
 					},
@@ -257,7 +270,7 @@ func NewErpcProxy(ctx *pulumi.Context, args ErpcProxyComponentArgs, opts ...pulu
 			Ports: corev1.ServicePortArray{
 				&corev1.ServicePortArgs{
 					Name:       pulumi.String("http"),
-					Port:       pulumi.Int(args.Config.Server.HttpPort),
+					Port:       pulumi.Int(args.Config.Server.HttpPortV4),
 					TargetPort: pulumi.String("http"),
 					Protocol:   pulumi.String("TCP"),
 				},
@@ -284,9 +297,9 @@ func marshalErpcConfig(config ErpcProxyConfig) (string, error) {
 	configMap := map[string]interface{}{
 		"logLevel": config.LogLevel,
 		"server": map[string]interface{}{
-			"httpHost":     config.Server.HttpHost,
-			"httpPort":     config.Server.HttpPort,
-			"maxTimeoutMs": config.Server.MaxTimeoutMs,
+			"httpHostV4": config.Server.HttpHostV4,
+			"httpPortV4": config.Server.HttpPortV4,
+			"maxTimeout": config.Server.MaxTimeout,
 		},
 	}
 
@@ -309,11 +322,34 @@ func marshalErpcConfig(config ErpcProxyConfig) (string, error) {
 			projectMap["rateLimitBudget"] = project.RateLimitBudget
 		}
 
+		// Build upstreams array
+		upstreams := make([]map[string]interface{}, 0, len(project.Upstreams))
+		for _, upstream := range project.Upstreams {
+			upstreamMap := map[string]interface{}{
+				"id":       upstream.Id,
+				"type":     upstream.Type,
+				"endpoint": upstream.Endpoint,
+			}
+			if upstream.RateLimitBudget != "" {
+				upstreamMap["rateLimitBudget"] = upstream.RateLimitBudget
+			}
+			if upstream.MaxRetries > 0 {
+				upstreamMap["maxRetries"] = upstream.MaxRetries
+			}
+			if upstream.Timeout != "" {
+				upstreamMap["timeout"] = upstream.Timeout
+			}
+			upstreams = append(upstreams, upstreamMap)
+		}
+		projectMap["upstreams"] = upstreams
+
 		// Build networks array
 		networks := make([]map[string]interface{}, 0, len(project.Networks))
 		for _, network := range project.Networks {
 			networkMap := map[string]interface{}{
-				"chainId":      network.ChainId,
+				"evm": map[string]interface{}{
+					"chainId": network.ChainId,
+				},
 				"architecture": network.Architecture,
 			}
 
@@ -337,27 +373,6 @@ func marshalErpcConfig(config ErpcProxyConfig) (string, error) {
 				}
 				networkMap["failover"] = failover
 			}
-
-			// Build upstreams array
-			upstreams := make([]map[string]interface{}, 0, len(network.Upstreams))
-			for _, upstream := range network.Upstreams {
-				upstreamMap := map[string]interface{}{
-					"id":       upstream.Id,
-					"type":     upstream.Type,
-					"endpoint": upstream.Endpoint,
-				}
-				if upstream.RateLimitBudget != "" {
-					upstreamMap["rateLimitBudget"] = upstream.RateLimitBudget
-				}
-				if upstream.MaxRetries > 0 {
-					upstreamMap["maxRetries"] = upstream.MaxRetries
-				}
-				if upstream.Timeout != "" {
-					upstreamMap["timeout"] = upstream.Timeout
-				}
-				upstreams = append(upstreams, upstreamMap)
-			}
-			networkMap["upstreams"] = upstreams
 
 			networks = append(networks, networkMap)
 		}

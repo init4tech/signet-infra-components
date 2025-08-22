@@ -22,8 +22,8 @@ func TestErpcProxyComponentArgs_Validate(t *testing.T) {
 				Config: ErpcProxyConfig{
 					LogLevel: "info",
 					Server: ErpcProxyServerConfig{
-						HttpPort:     4000,
-						MaxTimeoutMs: 30000,
+						HttpPortV4: 4000,
+						MaxTimeout: "30s",
 					},
 					Projects: []ErpcProxyProjectConfig{
 						{
@@ -32,13 +32,13 @@ func TestErpcProxyComponentArgs_Validate(t *testing.T) {
 								{
 									ChainId:      1,
 									Architecture: "evm",
-									Upstreams: []ErpcProxyUpstreamConfig{
-										{
-											Id:       "upstream1",
-											Type:     "http",
-											Endpoint: "https://eth.example.com",
-										},
-									},
+								},
+							},
+							Upstreams: []ErpcProxyUpstreamConfig{
+								{
+									Id:       "upstream1",
+									Type:     "http",
+									Endpoint: "https://eth.example.com",
 								},
 							},
 						},
@@ -60,13 +60,13 @@ func TestErpcProxyComponentArgs_Validate(t *testing.T) {
 								{
 									ChainId:      1,
 									Architecture: "evm",
-									Upstreams: []ErpcProxyUpstreamConfig{
-										{
-											Id:       "upstream1",
-											Type:     "http",
-											Endpoint: "https://eth.example.com",
-										},
-									},
+								},
+							},
+							Upstreams: []ErpcProxyUpstreamConfig{
+								{
+									Id:       "upstream1",
+									Type:     "http",
+									Endpoint: "https://eth.example.com",
 								},
 							},
 						},
@@ -89,13 +89,13 @@ func TestErpcProxyComponentArgs_Validate(t *testing.T) {
 								{
 									ChainId:      1,
 									Architecture: "evm",
-									Upstreams: []ErpcProxyUpstreamConfig{
-										{
-											Id:       "upstream1",
-											Type:     "http",
-											Endpoint: "https://eth.example.com",
-										},
-									},
+								},
+							},
+							Upstreams: []ErpcProxyUpstreamConfig{
+								{
+									Id:       "upstream1",
+									Type:     "http",
+									Endpoint: "https://eth.example.com",
 								},
 							},
 						},
@@ -118,13 +118,13 @@ func TestErpcProxyComponentArgs_Validate(t *testing.T) {
 								{
 									ChainId:      1,
 									Architecture: "evm",
-									Upstreams: []ErpcProxyUpstreamConfig{
-										{
-											Id:       "upstream1",
-											Type:     "http",
-											Endpoint: "https://eth.example.com",
-										},
-									},
+								},
+							},
+							Upstreams: []ErpcProxyUpstreamConfig{
+								{
+									Id:       "upstream1",
+									Type:     "http",
+									Endpoint: "https://eth.example.com",
 								},
 							},
 						},
@@ -149,13 +149,13 @@ func TestErpcProxyComponentArgs_Validate(t *testing.T) {
 								{
 									ChainId:      1,
 									Architecture: "evm",
-									Upstreams: []ErpcProxyUpstreamConfig{
-										{
-											Id:       "upstream1",
-											Type:     "http",
-											Endpoint: "https://eth.example.com",
-										},
-									},
+								},
+							},
+							Upstreams: []ErpcProxyUpstreamConfig{
+								{
+									Id:       "upstream1",
+									Type:     "http",
+									Endpoint: "https://eth.example.com",
 								},
 							},
 						},
@@ -198,13 +198,13 @@ func TestErpcProxyConfig_Validate(t *testing.T) {
 							{
 								ChainId:      1,
 								Architecture: "evm",
-								Upstreams: []ErpcProxyUpstreamConfig{
-									{
-										Id:       "upstream1",
-										Type:     "http",
-										Endpoint: "https://eth.example.com",
-									},
-								},
+							},
+						},
+						Upstreams: []ErpcProxyUpstreamConfig{
+							{
+								Id:       "upstream1",
+								Type:     "http",
+								Endpoint: "https://eth.example.com",
 							},
 						},
 					},
@@ -223,13 +223,13 @@ func TestErpcProxyConfig_Validate(t *testing.T) {
 							{
 								ChainId:      1,
 								Architecture: "evm",
-								Upstreams: []ErpcProxyUpstreamConfig{
-									{
-										Id:       "upstream1",
-										Type:     "http",
-										Endpoint: "https://eth.example.com",
-									},
-								},
+							},
+						},
+						Upstreams: []ErpcProxyUpstreamConfig{
+							{
+								Id:       "upstream1",
+								Type:     "http",
+								Endpoint: "https://eth.example.com",
 							},
 						},
 					},
@@ -246,6 +246,141 @@ func TestErpcProxyConfig_Validate(t *testing.T) {
 			},
 			wantErr: true,
 			errMsg:  "at least one project is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.config.Validate()
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errMsg)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestErpcProxyProjectConfig_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		config  ErpcProxyProjectConfig
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "valid config",
+			config: ErpcProxyProjectConfig{
+				Id: "project1",
+				Networks: []ErpcProxyNetworkConfig{
+					{
+						ChainId:      1,
+						Architecture: "evm",
+					},
+				},
+				Upstreams: []ErpcProxyUpstreamConfig{
+					{
+						Id:       "upstream1",
+						Type:     "http",
+						Endpoint: "https://eth.example.com",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "missing project id",
+			config: ErpcProxyProjectConfig{
+				Networks: []ErpcProxyNetworkConfig{
+					{
+						ChainId:      1,
+						Architecture: "evm",
+					},
+				},
+				Upstreams: []ErpcProxyUpstreamConfig{
+					{
+						Id:       "upstream1",
+						Type:     "http",
+						Endpoint: "https://eth.example.com",
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "project ID is required",
+		},
+		{
+			name: "no networks",
+			config: ErpcProxyProjectConfig{
+				Id:       "project1",
+				Networks: []ErpcProxyNetworkConfig{},
+				Upstreams: []ErpcProxyUpstreamConfig{
+					{
+						Id:       "upstream1",
+						Type:     "http",
+						Endpoint: "https://eth.example.com",
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "at least one network is required",
+		},
+		{
+			name: "no upstreams",
+			config: ErpcProxyProjectConfig{
+				Id: "project1",
+				Networks: []ErpcProxyNetworkConfig{
+					{
+						ChainId:      1,
+						Architecture: "evm",
+					},
+				},
+				Upstreams: []ErpcProxyUpstreamConfig{},
+			},
+			wantErr: true,
+			errMsg:  "at least one upstream is required",
+		},
+		{
+			name: "invalid network",
+			config: ErpcProxyProjectConfig{
+				Id: "project1",
+				Networks: []ErpcProxyNetworkConfig{
+					{
+						ChainId:      0, // Invalid
+						Architecture: "evm",
+					},
+				},
+				Upstreams: []ErpcProxyUpstreamConfig{
+					{
+						Id:       "upstream1",
+						Type:     "http",
+						Endpoint: "https://eth.example.com",
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "invalid network at index 0",
+		},
+		{
+			name: "invalid upstream",
+			config: ErpcProxyProjectConfig{
+				Id: "project1",
+				Networks: []ErpcProxyNetworkConfig{
+					{
+						ChainId:      1,
+						Architecture: "evm",
+					},
+				},
+				Upstreams: []ErpcProxyUpstreamConfig{
+					{
+						Id:       "upstream1",
+						Type:     "invalid", // Invalid type
+						Endpoint: "https://eth.example.com",
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "invalid upstream at index 0",
 		},
 	}
 
@@ -325,16 +460,16 @@ func TestErpcProxyServerConfig_Validate(t *testing.T) {
 		{
 			name: "valid config",
 			config: ErpcProxyServerConfig{
-				HttpPort:     4000,
-				MaxTimeoutMs: 30000,
+				HttpPortV4: 4000,
+				MaxTimeout: "30s",
 			},
 			wantErr: false,
 		},
 		{
 			name: "invalid port - negative",
 			config: ErpcProxyServerConfig{
-				HttpPort:     -1,
-				MaxTimeoutMs: 30000,
+				HttpPortV4: -1,
+				MaxTimeout: "30s",
 			},
 			wantErr: true,
 			errMsg:  "invalid HTTP port",
@@ -342,8 +477,8 @@ func TestErpcProxyServerConfig_Validate(t *testing.T) {
 		{
 			name: "invalid port - too high",
 			config: ErpcProxyServerConfig{
-				HttpPort:     70000,
-				MaxTimeoutMs: 30000,
+				HttpPortV4: 70000,
+				MaxTimeout: "30s",
 			},
 			wantErr: true,
 			errMsg:  "invalid HTTP port",
@@ -351,8 +486,8 @@ func TestErpcProxyServerConfig_Validate(t *testing.T) {
 		{
 			name: "negative timeout",
 			config: ErpcProxyServerConfig{
-				HttpPort:     4000,
-				MaxTimeoutMs: -1,
+				HttpPortV4: 4000,
+				MaxTimeout: "-1s",
 			},
 			wantErr: true,
 			errMsg:  "max timeout must be non-negative",
@@ -384,13 +519,6 @@ func TestErpcProxyNetworkConfig_Validate(t *testing.T) {
 			config: ErpcProxyNetworkConfig{
 				ChainId:      1,
 				Architecture: "evm",
-				Upstreams: []ErpcProxyUpstreamConfig{
-					{
-						Id:       "upstream1",
-						Type:     "http",
-						Endpoint: "https://eth.example.com",
-					},
-				},
 			},
 			wantErr: false,
 		},
@@ -399,13 +527,6 @@ func TestErpcProxyNetworkConfig_Validate(t *testing.T) {
 			config: ErpcProxyNetworkConfig{
 				ChainId:      0,
 				Architecture: "evm",
-				Upstreams: []ErpcProxyUpstreamConfig{
-					{
-						Id:       "upstream1",
-						Type:     "http",
-						Endpoint: "https://eth.example.com",
-					},
-				},
 			},
 			wantErr: true,
 			errMsg:  "chain ID must be positive",
@@ -414,13 +535,6 @@ func TestErpcProxyNetworkConfig_Validate(t *testing.T) {
 			name: "missing architecture",
 			config: ErpcProxyNetworkConfig{
 				ChainId: 1,
-				Upstreams: []ErpcProxyUpstreamConfig{
-					{
-						Id:       "upstream1",
-						Type:     "http",
-						Endpoint: "https://eth.example.com",
-					},
-				},
 			},
 			wantErr: true,
 			errMsg:  "architecture is required",
@@ -430,26 +544,9 @@ func TestErpcProxyNetworkConfig_Validate(t *testing.T) {
 			config: ErpcProxyNetworkConfig{
 				ChainId:      1,
 				Architecture: "invalid",
-				Upstreams: []ErpcProxyUpstreamConfig{
-					{
-						Id:       "upstream1",
-						Type:     "http",
-						Endpoint: "https://eth.example.com",
-					},
-				},
 			},
 			wantErr: true,
 			errMsg:  "invalid architecture",
-		},
-		{
-			name: "no upstreams",
-			config: ErpcProxyNetworkConfig{
-				ChainId:      1,
-				Architecture: "evm",
-				Upstreams:    []ErpcProxyUpstreamConfig{},
-			},
-			wantErr: true,
-			errMsg:  "at least one upstream is required",
 		},
 	}
 
