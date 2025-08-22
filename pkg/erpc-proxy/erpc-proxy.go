@@ -29,7 +29,7 @@ func NewErpcProxy(ctx *pulumi.Context, args ErpcProxyComponentArgs, opts ...pulu
 		args.Config.Server.HttpPortV4 = DefaultHttpPort
 	}
 	if args.Config.Server.MaxTimeout == "" {
-		ctx.Log.Info(fmt.Sprintf("Using default max timeout: %d", DefaultMaxTimeoutMs), nil)
+		ctx.Log.Info(fmt.Sprintf("Using default max timeout: %s", DefaultMaxTimeoutMs), nil)
 		args.Config.Server.MaxTimeout = DefaultMaxTimeoutMs
 	}
 	if args.Resources.MemoryRequest == "" {
