@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Validate validates the ErpcProxyComponentArgs
@@ -105,12 +106,15 @@ func (d *ErpcProxyDatabaseConfig) Validate() error {
 
 // Validate validates the ErpcProxyServerConfig
 func (s *ErpcProxyServerConfig) Validate() error {
-	if s.HttpPort < 0 || s.HttpPort > 65535 {
-		return fmt.Errorf("invalid HTTP port: %d, must be between 0 and 65535", s.HttpPort)
+	if s.HttpPortV4 < 0 || s.HttpPortV4 > 65535 {
+		return fmt.Errorf("invalid HTTP port: %d, must be between 0 and 65535", s.HttpPortV4)
 	}
 
-	if s.MaxTimeoutMs < 0 {
-		return fmt.Errorf("max timeout must be non-negative")
+	if s.MaxTimeout != "" {
+		_, err := time.ParseDuration(s.MaxTimeout)
+		if err != nil {
+			return fmt.Errorf("invalid max timeout: %w", err)
+		}
 	}
 
 	return nil
@@ -129,6 +133,17 @@ func (p *ErpcProxyProjectConfig) Validate() error {
 	for i, network := range p.Networks {
 		if err := network.Validate(); err != nil {
 			return fmt.Errorf("invalid network at index %d: %w", i, err)
+		}
+	}
+
+	// Validate upstreams
+	if len(p.Upstreams) == 0 {
+		return fmt.Errorf("at least one upstream is required")
+	}
+
+	for i, upstream := range p.Upstreams {
+		if err := upstream.Validate(); err != nil {
+			return fmt.Errorf("invalid upstream at index %d: %w", i, err)
 		}
 	}
 
@@ -161,17 +176,6 @@ func (n *ErpcProxyNetworkConfig) Validate() error {
 	// Validate failover config if provided
 	if err := n.Failover.Validate(); err != nil {
 		return fmt.Errorf("invalid failover config: %w", err)
-	}
-
-	// Validate upstreams
-	if len(n.Upstreams) == 0 {
-		return fmt.Errorf("at least one upstream is required")
-	}
-
-	for i, upstream := range n.Upstreams {
-		if err := upstream.Validate(); err != nil {
-			return fmt.Errorf("invalid upstream at index %d: %w", i, err)
-		}
 	}
 
 	return nil
@@ -213,7 +217,7 @@ func (u *ErpcProxyUpstreamConfig) Validate() error {
 	}
 
 	// Validate upstream type
-	validTypes := []string{"http", "ws", "alchemy", "blast", "infura", "quicknode", "chainstack", "drpc", "envio"}
+	validTypes := []string{"evm", "non-evm"}
 	valid := false
 	for _, t := range validTypes {
 		if u.Type == t {
@@ -265,7 +269,7 @@ func isValidResourceString(s string) bool {
 	if s == "" {
 		return true // Empty is valid (uses defaults)
 	}
-	
+
 	// Check for valid memory suffixes (Ki, Mi, Gi, Ti, Pi, Ei)
 	memorySuffixes := []string{"Ki", "Mi", "Gi", "Ti", "Pi", "Ei"}
 	for _, suffix := range memorySuffixes {
@@ -278,7 +282,7 @@ func isValidResourceString(s string) bool {
 			return err == nil && num >= 0
 		}
 	}
-	
+
 	// Check for CPU suffixes (m for millicores, or k, M, G, T, P, E for decimal)
 	cpuSuffixes := []string{"m", "k", "M", "G", "T", "P", "E"}
 	for _, suffix := range cpuSuffixes {
@@ -291,7 +295,7 @@ func isValidResourceString(s string) bool {
 			return err == nil && num >= 0
 		}
 	}
-	
+
 	// Also allow plain numbers (for CPU cores)
 	num, err := strconv.ParseFloat(s, 64)
 	return err == nil && num >= 0

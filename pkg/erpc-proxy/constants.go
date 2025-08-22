@@ -12,24 +12,24 @@ const (
 	ServiceSuffix        = "-service"
 
 	// Default values
-	DefaultReplicas       = 1
-	DefaultHttpPort       = 4000
-	DefaultMetricsPort    = 4001
-	DefaultImage          = "ghcr.io/erpc/erpc:latest"
-	DefaultLogLevel       = "info"
-	DefaultMaxTimeoutMs   = 30000
-	DefaultMemoryRequest  = "256Mi"
-	DefaultMemoryLimit    = "2Gi"
-	DefaultCpuRequest     = "100m"
-	DefaultCpuLimit       = "1000m"
-	DefaultGoGC           = "40"
-	DefaultGoMemLimit     = "1900MiB"
+	DefaultReplicas      = 1
+	DefaultHttpPort      = 4000
+	DefaultMetricsPort   = 4001
+	DefaultImage         = "ghcr.io/erpc/erpc:latest"
+	DefaultLogLevel      = "info"
+	DefaultMaxTimeoutMs  = "30s"
+	DefaultMemoryRequest = "256Mi"
+	DefaultMemoryLimit   = "2Gi"
+	DefaultCpuRequest    = "100m"
+	DefaultCpuLimit      = "1000m"
+	DefaultGoGC          = "40"
+	DefaultGoMemLimit    = "1900MiB"
 
 	// Environment variable names
 	EnvGoGC       = "GOGC"
 	EnvGoMemLimit = "GOMEMLIMIT"
 
 	// Config file name
-	ConfigFileName = "erpc.yaml"
-	ConfigMountPath = "/etc/erpc"
+	ConfigFileName  = "erpc.yaml"
+	ConfigMountPath = "/home/nonroot"
 )
