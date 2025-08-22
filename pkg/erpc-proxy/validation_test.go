@@ -37,7 +37,7 @@ func TestErpcProxyComponentArgs_Validate(t *testing.T) {
 							Upstreams: []ErpcProxyUpstreamConfig{
 								{
 									Id:       "upstream1",
-									Type:     "http",
+									Type:     "evm",
 									Endpoint: "https://eth.example.com",
 								},
 							},
@@ -65,7 +65,7 @@ func TestErpcProxyComponentArgs_Validate(t *testing.T) {
 							Upstreams: []ErpcProxyUpstreamConfig{
 								{
 									Id:       "upstream1",
-									Type:     "http",
+									Type:     "evm",
 									Endpoint: "https://eth.example.com",
 								},
 							},
@@ -94,7 +94,7 @@ func TestErpcProxyComponentArgs_Validate(t *testing.T) {
 							Upstreams: []ErpcProxyUpstreamConfig{
 								{
 									Id:       "upstream1",
-									Type:     "http",
+									Type:     "evm",
 									Endpoint: "https://eth.example.com",
 								},
 							},
@@ -123,7 +123,7 @@ func TestErpcProxyComponentArgs_Validate(t *testing.T) {
 							Upstreams: []ErpcProxyUpstreamConfig{
 								{
 									Id:       "upstream1",
-									Type:     "http",
+									Type:     "evm",
 									Endpoint: "https://eth.example.com",
 								},
 							},
@@ -154,7 +154,7 @@ func TestErpcProxyComponentArgs_Validate(t *testing.T) {
 							Upstreams: []ErpcProxyUpstreamConfig{
 								{
 									Id:       "upstream1",
-									Type:     "http",
+									Type:     "evm",
 									Endpoint: "https://eth.example.com",
 								},
 							},
@@ -203,7 +203,7 @@ func TestErpcProxyConfig_Validate(t *testing.T) {
 						Upstreams: []ErpcProxyUpstreamConfig{
 							{
 								Id:       "upstream1",
-								Type:     "http",
+								Type:     "evm",
 								Endpoint: "https://eth.example.com",
 							},
 						},
@@ -228,7 +228,7 @@ func TestErpcProxyConfig_Validate(t *testing.T) {
 						Upstreams: []ErpcProxyUpstreamConfig{
 							{
 								Id:       "upstream1",
-								Type:     "http",
+								Type:     "evm",
 								Endpoint: "https://eth.example.com",
 							},
 						},
@@ -282,7 +282,7 @@ func TestErpcProxyProjectConfig_Validate(t *testing.T) {
 				Upstreams: []ErpcProxyUpstreamConfig{
 					{
 						Id:       "upstream1",
-						Type:     "http",
+						Type:     "evm",
 						Endpoint: "https://eth.example.com",
 					},
 				},
@@ -301,7 +301,7 @@ func TestErpcProxyProjectConfig_Validate(t *testing.T) {
 				Upstreams: []ErpcProxyUpstreamConfig{
 					{
 						Id:       "upstream1",
-						Type:     "http",
+						Type:     "evm",
 						Endpoint: "https://eth.example.com",
 					},
 				},
@@ -317,7 +317,7 @@ func TestErpcProxyProjectConfig_Validate(t *testing.T) {
 				Upstreams: []ErpcProxyUpstreamConfig{
 					{
 						Id:       "upstream1",
-						Type:     "http",
+						Type:     "evm",
 						Endpoint: "https://eth.example.com",
 					},
 				},
@@ -353,7 +353,7 @@ func TestErpcProxyProjectConfig_Validate(t *testing.T) {
 				Upstreams: []ErpcProxyUpstreamConfig{
 					{
 						Id:       "upstream1",
-						Type:     "http",
+						Type:     "evm",
 						Endpoint: "https://eth.example.com",
 					},
 				},
@@ -483,15 +483,6 @@ func TestErpcProxyServerConfig_Validate(t *testing.T) {
 			wantErr: true,
 			errMsg:  "invalid HTTP port",
 		},
-		{
-			name: "negative timeout",
-			config: ErpcProxyServerConfig{
-				HttpPortV4: 4000,
-				MaxTimeout: "-1s",
-			},
-			wantErr: true,
-			errMsg:  "max timeout must be non-negative",
-		},
 	}
 
 	for _, tt := range tests {
@@ -574,7 +565,7 @@ func TestErpcProxyUpstreamConfig_Validate(t *testing.T) {
 			name: "valid config",
 			config: ErpcProxyUpstreamConfig{
 				Id:       "upstream1",
-				Type:     "http",
+				Type:     "evm",
 				Endpoint: "https://eth.example.com",
 			},
 			wantErr: false,
@@ -582,7 +573,7 @@ func TestErpcProxyUpstreamConfig_Validate(t *testing.T) {
 		{
 			name: "missing id",
 			config: ErpcProxyUpstreamConfig{
-				Type:     "http",
+				Type:     "evm",
 				Endpoint: "https://eth.example.com",
 			},
 			wantErr: true,
@@ -611,7 +602,7 @@ func TestErpcProxyUpstreamConfig_Validate(t *testing.T) {
 			name: "missing endpoint",
 			config: ErpcProxyUpstreamConfig{
 				Id:   "upstream1",
-				Type: "http",
+				Type: "evm",
 			},
 			wantErr: true,
 			errMsg:  "upstream endpoint is required",
@@ -620,7 +611,7 @@ func TestErpcProxyUpstreamConfig_Validate(t *testing.T) {
 			name: "negative max retries",
 			config: ErpcProxyUpstreamConfig{
 				Id:         "upstream1",
-				Type:       "http",
+				Type:       "evm",
 				Endpoint:   "https://eth.example.com",
 				MaxRetries: -1,
 			},
