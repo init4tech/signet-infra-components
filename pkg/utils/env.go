@@ -19,28 +19,33 @@ type EnvProvider interface {
 
 // CreateConfigMap creates a Kubernetes ConfigMap from an environment variables struct
 // It automatically converts field names to environment variable format (UPPER_SNAKE_CASE)
+// The optional parent parameter can be provided to set the parent resource for the ConfigMap
 func CreateConfigMap[T EnvProvider](
 	ctx *pulumi.Context,
 	name string,
 	namespace pulumi.StringInput,
 	labels pulumi.StringMap,
 	env T,
+	parent ...pulumi.Resource,
 ) (*corev1.ConfigMap, error) {
-	// Create metadata for ConfigMap
-	metadata := &metav1.ObjectMetaArgs{
-		Name:      pulumi.String(name),
-		Namespace: namespace,
-		Labels:    labels,
-	}
 
 	// Get environment variables as a map using the EnvProvider interface
 	data := env.GetEnvMap()
 
+	// Prepare options with parent if provided
+	var opts []pulumi.ResourceOption
+	if len(parent) > 0 && parent[0] != nil {
+		opts = append(opts, pulumi.Parent(parent[0]))
+	}
+
 	// Create and return ConfigMap
 	return corev1.NewConfigMap(ctx, name, &corev1.ConfigMapArgs{
-		Metadata: metadata,
-		Data:     data,
-	})
+		Metadata: &metav1.ObjectMetaArgs{
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Data: data,
+	}, opts...)
 }
 
 // CreateEnvMap converts a struct to a map of environment variables
@@ -212,7 +217,6 @@ func CreatePersistentVolumeClaim(
 
 	return corev1.NewPersistentVolumeClaim(ctx, name, &corev1.PersistentVolumeClaimArgs{
 		Metadata: &metav1.ObjectMetaArgs{
-			Name:      pulumi.String(name),
 			Labels:    labels,
 			Namespace: namespace,
 		},

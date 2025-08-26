@@ -14,7 +14,7 @@ import (
 func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pulumi.ResourceOption) (*SignetNodeComponent, error) {
 	// Apply defaults before validation
 	args.ApplyDefaults()
-	
+
 	if err := args.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid signet node component args: %w", err)
 	}
@@ -54,7 +54,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		return nil, fmt.Errorf("failed to create rollup data pvc: %w", err)
 	}
 
-	secretName := "execution-jwt"
+	secretName := fmt.Sprintf("%s-execution-jwt", args.Name)
 	secret, err := corev1.NewSecret(ctx, secretName, &corev1.SecretArgs{
 		StringData: pulumi.StringMap{
 			"jwt.hex": internalArgs.ExecutionJwt,
@@ -63,19 +63,20 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 			Namespace: internalArgs.Namespace,
 			Labels:    utils.CreateResourceLabels(args.Name, secretName, args.Name, nil),
 		},
-	})
+	}, pulumi.Parent(component))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create execution jwt secret: %w", err)
 	}
 
 	// Create ConfigMap for execution environment variables
-	executionConfigMapName := "exex-configmap"
+	executionConfigMapName := fmt.Sprintf("%s-exex-configmap", args.Name)
 	executionConfigMap, err := utils.CreateConfigMap(
 		ctx,
 		executionConfigMapName,
 		internalArgs.Namespace,
 		utils.CreateResourceLabels(args.Name, executionConfigMapName, args.Name, nil),
 		internalArgs.Env,
+		component,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create execution configmap: %w", err)
@@ -215,7 +216,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 									MountPath: internalArgs.RollupDataMountPath,
 								},
 								corev1.VolumeMountArgs{
-									Name:      pulumi.String("execution-jwt"),
+									Name:      pulumi.String(secretName),
 									MountPath: internalArgs.ExecutionJwtMountPath,
 								},
 							},
@@ -230,7 +231,7 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 							},
 						},
 						corev1.VolumeArgs{
-							Name: pulumi.String("execution-jwt"),
+							Name: pulumi.String(secretName),
 							Secret: &corev1.SecretVolumeSourceArgs{
 								SecretName: secret.Metadata.Name(),
 							},
@@ -270,13 +271,14 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 		Example: "example",
 	}
 
-	consensusConfigMapName := "consensus-configmap-env-config"
+	consensusConfigMapName := fmt.Sprintf("%s-consensus-configmap-env-config", args.Name)
 	consensusConfigMap, err := utils.CreateConfigMap(
 		ctx,
 		consensusConfigMapName,
 		internalArgs.Namespace,
 		utils.CreateResourceLabels(args.Name, consensusConfigMapName, args.Name, nil),
 		consensusEnv.toInternal(),
+		component,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create consensus configmap: %w", err)
