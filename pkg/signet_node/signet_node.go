@@ -12,6 +12,9 @@ import (
 )
 
 func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pulumi.ResourceOption) (*SignetNodeComponent, error) {
+	// Apply defaults before validation
+	args.ApplyDefaults()
+	
 	if err := args.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid signet node component args: %w", err)
 	}
@@ -205,15 +208,15 @@ func NewSignetNode(ctx *pulumi.Context, args SignetNodeComponentArgs, opts ...pu
 							VolumeMounts: corev1.VolumeMountArray{
 								corev1.VolumeMountArgs{
 									Name:      pulumi.String("signet-node-data"),
-									MountPath: pulumi.String("/root/.local/share/reth"),
+									MountPath: internalArgs.SignetNodeDataMountPath,
 								},
 								corev1.VolumeMountArgs{
 									Name:      pulumi.String("rollup-data"),
-									MountPath: pulumi.String("/root/.local/share/exex"),
+									MountPath: internalArgs.RollupDataMountPath,
 								},
 								corev1.VolumeMountArgs{
 									Name:      pulumi.String("execution-jwt"),
-									MountPath: pulumi.String("/etc/reth/execution-jwt"),
+									MountPath: internalArgs.ExecutionJwtMountPath,
 								},
 							},
 							Resources: NewResourceRequirements("2", "16Gi", "2", "4Gi"),

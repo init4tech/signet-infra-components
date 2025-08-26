@@ -4,6 +4,19 @@ import (
 	"fmt"
 )
 
+// ApplyDefaults sets default values for optional fields
+func (args *SignetNodeComponentArgs) ApplyDefaults() {
+	if args.SignetNodeDataMountPath == "" {
+		args.SignetNodeDataMountPath = DefaultSignetNodeDataMountPath
+	}
+	if args.RollupDataMountPath == "" {
+		args.RollupDataMountPath = DefaultRollupDataMountPath
+	}
+	if args.ExecutionJwtMountPath == "" {
+		args.ExecutionJwtMountPath = DefaultExecutionJwtMountPath
+	}
+}
+
 func (args *SignetNodeComponentArgs) Validate() error {
 	if args.Name == "" {
 		return fmt.Errorf("name is required")

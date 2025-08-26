@@ -141,3 +141,35 @@ func TestSignetNodeComponentArgsValidate(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "execution pvc size is required")
 }
+
+func TestApplyDefaults(t *testing.T) {
+	// Test with no mount paths specified
+	args := SignetNodeComponentArgs{}
+	args.ApplyDefaults()
+	
+	assert.Equal(t, DefaultSignetNodeDataMountPath, args.SignetNodeDataMountPath)
+	assert.Equal(t, DefaultRollupDataMountPath, args.RollupDataMountPath)
+	assert.Equal(t, DefaultExecutionJwtMountPath, args.ExecutionJwtMountPath)
+	
+	// Test with custom mount paths
+	customArgs := SignetNodeComponentArgs{
+		SignetNodeDataMountPath: "/custom/signet/data",
+		RollupDataMountPath:     "/custom/rollup/data",
+		ExecutionJwtMountPath:   "/custom/jwt",
+	}
+	customArgs.ApplyDefaults()
+	
+	assert.Equal(t, "/custom/signet/data", customArgs.SignetNodeDataMountPath)
+	assert.Equal(t, "/custom/rollup/data", customArgs.RollupDataMountPath)
+	assert.Equal(t, "/custom/jwt", customArgs.ExecutionJwtMountPath)
+	
+	// Test with partial custom mount paths
+	partialArgs := SignetNodeComponentArgs{
+		SignetNodeDataMountPath: "/custom/signet/data",
+	}
+	partialArgs.ApplyDefaults()
+	
+	assert.Equal(t, "/custom/signet/data", partialArgs.SignetNodeDataMountPath)
+	assert.Equal(t, DefaultRollupDataMountPath, partialArgs.RollupDataMountPath)
+	assert.Equal(t, DefaultExecutionJwtMountPath, partialArgs.ExecutionJwtMountPath)
+}
