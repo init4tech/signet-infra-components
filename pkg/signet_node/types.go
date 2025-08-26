@@ -29,6 +29,9 @@ type SignetNodeComponentArgs struct {
 	ExecutionClientStartCommand []string
 	ConsensusClientStartCommand []string
 	AppLabels                   AppLabels
+	SignetNodeDataMountPath     string // Optional: defaults to "/root/.local/share/reth"
+	RollupDataMountPath         string // Optional: defaults to "/root/.local/share/exex"
+	ExecutionJwtMountPath       string // Optional: defaults to "/etc/reth/execution-jwt"
 }
 
 // Internal structs with Pulumi types for use within the component
@@ -45,6 +48,9 @@ type signetNodeComponentArgsInternal struct {
 	ExecutionClientStartCommand pulumi.StringArrayInput
 	ConsensusClientStartCommand pulumi.StringArrayInput
 	AppLabels                   AppLabels
+	SignetNodeDataMountPath     pulumi.StringInput
+	RollupDataMountPath         pulumi.StringInput
+	ExecutionJwtMountPath       pulumi.StringInput
 }
 
 type SignetNodeComponent struct {
@@ -132,6 +138,9 @@ func (args SignetNodeComponentArgs) toInternal() signetNodeComponentArgsInternal
 		ExecutionClientStartCommand: pulumi.ToStringArray(args.ExecutionClientStartCommand),
 		ConsensusClientStartCommand: pulumi.ToStringArray(args.ConsensusClientStartCommand),
 		AppLabels:                   args.AppLabels,
+		SignetNodeDataMountPath:     pulumi.String(args.SignetNodeDataMountPath),
+		RollupDataMountPath:         pulumi.String(args.RollupDataMountPath),
+		ExecutionJwtMountPath:       pulumi.String(args.ExecutionJwtMountPath),
 	}
 }
 
