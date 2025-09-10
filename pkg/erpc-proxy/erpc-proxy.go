@@ -296,11 +296,23 @@ func marshalErpcConfig(config ErpcProxyConfig) (string, error) {
 	// Build the config structure for YAML marshaling
 	configMap := map[string]interface{}{
 		"logLevel": config.LogLevel,
-		"server": map[string]interface{}{
-			"httpHostV4": config.Server.HttpHostV4,
-			"httpPortV4": config.Server.HttpPortV4,
-			"maxTimeout": config.Server.MaxTimeout,
-		},
+	}
+
+	// Add server config if provided
+	if config.Server.HttpHostV4 != "" || config.Server.HttpPortV4 > 0 || config.Server.MaxTimeout != "" {
+		serverMap := map[string]interface{}{}
+		if config.Server.HttpHostV4 != "" {
+			serverMap["httpHostV4"] = config.Server.HttpHostV4
+		}
+		if config.Server.HttpPortV4 > 0 {
+			serverMap["httpPortV4"] = config.Server.HttpPortV4
+		}
+		if config.Server.MaxTimeout != "" {
+			serverMap["maxTimeout"] = config.Server.MaxTimeout
+		}
+		if len(serverMap) > 0 {
+			configMap["server"] = serverMap
+		}
 	}
 
 	// Add database config if provided
@@ -377,6 +389,35 @@ func marshalErpcConfig(config ErpcProxyConfig) (string, error) {
 			networks = append(networks, networkMap)
 		}
 		projectMap["networks"] = networks
+
+		// Add CORS config if provided
+		if project.Cors != nil {
+			corsMap := map[string]interface{}{}
+
+			if len(project.Cors.AllowedOrigins) > 0 {
+				corsMap["allowedOrigins"] = project.Cors.AllowedOrigins
+			}
+			if len(project.Cors.AllowedMethods) > 0 {
+				corsMap["allowedMethods"] = project.Cors.AllowedMethods
+			}
+			if len(project.Cors.AllowedHeaders) > 0 {
+				corsMap["allowedHeaders"] = project.Cors.AllowedHeaders
+			}
+			if len(project.Cors.ExposedHeaders) > 0 {
+				corsMap["exposedHeaders"] = project.Cors.ExposedHeaders
+			}
+			if project.Cors.AllowCredentials {
+				corsMap["allowCredentials"] = project.Cors.AllowCredentials
+			}
+			if project.Cors.MaxAge > 0 {
+				corsMap["maxAge"] = project.Cors.MaxAge
+			}
+
+			// Only add CORS section if there are any configured values
+			if len(corsMap) > 0 {
+				projectMap["cors"] = corsMap
+			}
+		}
 
 		projects = append(projects, projectMap)
 	}

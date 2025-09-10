@@ -87,6 +87,17 @@ type ErpcProxyProjectConfig struct {
 	Networks        []ErpcProxyNetworkConfig  `pulumi:"networks" validate:"required,min=1"`
 	Upstreams       []ErpcProxyUpstreamConfig `pulumi:"upstreams" validate:"required,min=1"`
 	RateLimitBudget string                    `pulumi:"rateLimitBudget"`
+	Cors            *ErpcProxyCorsConfig      `pulumi:"cors"`
+}
+
+// ErpcProxyCorsConfig represents CORS configuration for a project
+type ErpcProxyCorsConfig struct {
+	AllowedOrigins   []string `pulumi:"allowedOrigins"`
+	AllowedMethods   []string `pulumi:"allowedMethods"`
+	AllowedHeaders   []string `pulumi:"allowedHeaders"`
+	ExposedHeaders   []string `pulumi:"exposedHeaders"`
+	AllowCredentials bool     `pulumi:"allowCredentials"`
+	MaxAge           int      `pulumi:"maxAge" validate:"min=0"`
 }
 
 // ErpcProxyNetworkConfig represents a network configuration
