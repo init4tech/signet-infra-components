@@ -1,6 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# Contributing
 
 ## Repository Overview
 
@@ -187,7 +185,6 @@ When creating a new component:
 
 ## Common Pitfalls
 
-1. **Go Version**: CI uses Go 1.22, but go.mod specifies 1.24.3 - ensure compatibility
-2. **Pulumi Context**: Always use the provided `*pulumi.Context` for resource creation
-3. **Resource Dependencies**: Use Pulumi's dependency system via `pulumi.DependsOn` when needed
-4. **Kubernetes Namespaces**: Components don't create namespaces - they expect them to exist
+1. **Pulumi Context**: Always use the provided `*pulumi.Context` for resource creation
+2. **Resource Dependencies**: Use Pulumi's dependency system via `pulumi.DependsOn` when needed
+3. **Kubernetes Namespaces**: Components don't create namespaces - they expect them to exist
