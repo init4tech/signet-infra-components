@@ -5,7 +5,7 @@ go 1.24.3
 require (
 	github.com/pulumi/pulumi-aws/sdk/v6 v6.83.0
 	github.com/pulumi/pulumi-kubernetes/sdk/v4 v4.23.0
-	github.com/pulumi/pulumi/sdk/v3 v3.194.0
+	github.com/pulumi/pulumi/sdk/v3 v3.197.0
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
 )
