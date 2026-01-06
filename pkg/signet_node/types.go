@@ -71,56 +71,56 @@ type SignetNodeComponent struct {
 
 // Public-facing environment struct with base Go types
 type SignetNodeEnv struct {
-	HostZenithAddress             string `pulumi:"hostZenithAddress" validate:"required"`
-	RuOrdersContractAddress       string `pulumi:"ruOrdersContractAddress" validate:"required"`
-	HostOrdersContractAddress     string `pulumi:"hostOrdersContractAddress" validate:"required"`
-	SignetChainId                 int    `pulumi:"signetChainId" validate:"required"`
-	BlobExplorerUrl               string `pulumi:"blobExplorerUrl" validate:"required"`
-	SignetStaticPath              string `pulumi:"signetStaticPath" validate:"required"`
-	SignetDatabasePath            string `pulumi:"signetDatabasePath" validate:"required"`
-	RustLog                       string `pulumi:"rustLog"`
-	IpcEndpoint                   string `pulumi:"ipcEndpoint" validate:"required"`
-	RpcPort                       int    `pulumi:"rpcPort" validate:"required"`
-	WsRpcPort                     int    `pulumi:"wsRpcPort" validate:"required"`
-	TxForwardUrl                  string `pulumi:"txForwardUrl" validate:"required"`
-	GenesisJsonPath               string `pulumi:"genesisJsonPath" validate:"required"`
-	HostZenithDeployHeight        string `pulumi:"hostZenithDeployHeight" validate:"required"`
-	BaseFeeRecipient              string `pulumi:"baseFeeRecipient" validate:"required"`
-	HostPassageContractAddress    string `pulumi:"hostPassageContractAddress" validate:"required"`
-	HostTransactorContractAddress string `pulumi:"hostTransactorContractAddress" validate:"required"`
-	RuPassageContractAddress      string `pulumi:"ruPassageContractAddress" validate:"required"`
-	SignetClUrl                   string `pulumi:"signetClUrl" validate:"required"`
-	SignetPylonUrl                string `pulumi:"signetPylonUrl" validate:"required"`
-	HostStartTimestamp            int    `pulumi:"hostStartTimestamp" validate:"required"`
-	HostSlotOffset                int    `pulumi:"hostSlotOffset" validate:"required"`
-	HostSlotDuration              int    `pulumi:"hostSlotDuration" validate:"required"`
+	// Always required
+	BlobExplorerUrl    string `pulumi:"blobExplorerUrl" validate:"required"`
+	SignetStaticPath   string `pulumi:"signetStaticPath" validate:"required"`
+	SignetDatabasePath string `pulumi:"signetDatabasePath" validate:"required"`
+
+	// Optional with defaults (RpcPort: 5959, WsRpcPort: 5960)
+	RpcPort   int `pulumi:"rpcPort"`
+	WsRpcPort int `pulumi:"wsRpcPort"`
+
+	// Optional (no defaults)
+	ChainName      string `pulumi:"chainName"`
+	SignetClUrl    string `pulumi:"signetClUrl"`
+	SignetPylonUrl string `pulumi:"signetPylonUrl"`
+	TxForwardUrl   string `pulumi:"txForwardUrl"`
+	IpcEndpoint    string `pulumi:"ipcEndpoint"`
+	RustLog        string `pulumi:"rustLog"`
+
+	// Conditional: required if ChainName is not set
+	RollupGenesisJsonPath string `pulumi:"rollupGenesisJsonPath"`
+	HostGenesisJsonPath   string `pulumi:"hostGenesisJsonPath"`
+	StartTimestamp        int    `pulumi:"startTimestamp"`
+	SlotOffset            int    `pulumi:"slotOffset"`
+	SlotDuration          int    `pulumi:"slotDuration"`
 }
 
 // Internal environment struct with Pulumi types
 type signetNodeEnvInternal struct {
-	HostZenithAddress             pulumi.StringInput `pulumi:"hostZenithAddress" validate:"required"`
-	RuOrdersContractAddress       pulumi.StringInput `pulumi:"ruOrdersContractAddress" validate:"required"`
-	HostOrdersContractAddress     pulumi.StringInput `pulumi:"hostOrdersContractAddress" validate:"required"`
-	SignetChainId                 pulumi.StringInput `pulumi:"signetChainId" validate:"required"`
-	BlobExplorerUrl               pulumi.StringInput `pulumi:"blobExplorerUrl" validate:"required"`
-	SignetStaticPath              pulumi.StringInput `pulumi:"signetStaticPath" validate:"required"`
-	SignetDatabasePath            pulumi.StringInput `pulumi:"signetDatabasePath" validate:"required"`
-	RustLog                       pulumi.StringInput `pulumi:"rustLog"`
-	IpcEndpoint                   pulumi.StringInput `pulumi:"ipcEndpoint" validate:"required"`
-	RpcPort                       pulumi.StringInput `pulumi:"rpcPort" validate:"required"`
-	WsRpcPort                     pulumi.StringInput `pulumi:"wsRpcPort" validate:"required"`
-	TxForwardUrl                  pulumi.StringInput `pulumi:"txForwardUrl" validate:"required"`
-	GenesisJsonPath               pulumi.StringInput `pulumi:"genesisJsonPath" validate:"required"`
-	HostZenithDeployHeight        pulumi.StringInput `pulumi:"hostZenithDeployHeight" validate:"required"`
-	BaseFeeRecipient              pulumi.StringInput `pulumi:"baseFeeRecipient" validate:"required"`
-	HostPassageContractAddress    pulumi.StringInput `pulumi:"hostPassageContractAddress" validate:"required"`
-	HostTransactorContractAddress pulumi.StringInput `pulumi:"hostTransactorContractAddress" validate:"required"`
-	RuPassageContractAddress      pulumi.StringInput `pulumi:"ruPassageContractAddress" validate:"required"`
-	SignetClUrl                   pulumi.StringInput `pulumi:"signetClUrl" validate:"required"`
-	SignetPylonUrl                pulumi.StringInput `pulumi:"signetPylonUrl" validate:"required"`
-	HostStartTimestamp            pulumi.StringInput `pulumi:"hostStartTimestamp" validate:"required"`
-	HostSlotOffset                pulumi.StringInput `pulumi:"hostSlotOffset" validate:"required"`
-	HostSlotDuration              pulumi.StringInput `pulumi:"hostSlotDuration" validate:"required"`
+	// Always required
+	BlobExplorerUrl    pulumi.StringInput `pulumi:"blobExplorerUrl" validate:"required"`
+	SignetStaticPath   pulumi.StringInput `pulumi:"signetStaticPath" validate:"required"`
+	SignetDatabasePath pulumi.StringInput `pulumi:"signetDatabasePath" validate:"required"`
+
+	// Optional with defaults
+	RpcPort   pulumi.StringInput `pulumi:"rpcPort"`
+	WsRpcPort pulumi.StringInput `pulumi:"wsRpcPort"`
+
+	// Optional (no defaults)
+	ChainName      pulumi.StringInput `pulumi:"chainName"`
+	SignetClUrl    pulumi.StringInput `pulumi:"signetClUrl"`
+	SignetPylonUrl pulumi.StringInput `pulumi:"signetPylonUrl"`
+	TxForwardUrl   pulumi.StringInput `pulumi:"txForwardUrl"`
+	IpcEndpoint    pulumi.StringInput `pulumi:"ipcEndpoint"`
+	RustLog        pulumi.StringInput `pulumi:"rustLog"`
+
+	// Conditional: required if ChainName is not set
+	RollupGenesisJsonPath pulumi.StringInput `pulumi:"rollupGenesisJsonPath"`
+	HostGenesisJsonPath   pulumi.StringInput `pulumi:"hostGenesisJsonPath"`
+	StartTimestamp        pulumi.StringInput `pulumi:"startTimestamp"`
+	SlotOffset            pulumi.StringInput `pulumi:"slotOffset"`
+	SlotDuration          pulumi.StringInput `pulumi:"slotDuration"`
 }
 
 // Conversion function to convert public args to internal args
@@ -147,29 +147,29 @@ func (args SignetNodeComponentArgs) toInternal() signetNodeComponentArgsInternal
 // Conversion function to convert public env to internal env
 func (e SignetNodeEnv) toInternal() signetNodeEnvInternal {
 	return signetNodeEnvInternal{
-		HostZenithAddress:             pulumi.String(e.HostZenithAddress),
-		RuOrdersContractAddress:       pulumi.String(e.RuOrdersContractAddress),
-		HostOrdersContractAddress:     pulumi.String(e.HostOrdersContractAddress),
-		SignetChainId:                 pulumi.String(strconv.Itoa(e.SignetChainId)),
-		BlobExplorerUrl:               pulumi.String(e.BlobExplorerUrl),
-		SignetStaticPath:              pulumi.String(e.SignetStaticPath),
-		SignetDatabasePath:            pulumi.String(e.SignetDatabasePath),
-		RustLog:                       pulumi.String(e.RustLog),
-		IpcEndpoint:                   pulumi.String(e.IpcEndpoint),
-		RpcPort:                       pulumi.String(strconv.Itoa(e.RpcPort)),
-		WsRpcPort:                     pulumi.String(strconv.Itoa(e.WsRpcPort)),
-		TxForwardUrl:                  pulumi.String(e.TxForwardUrl),
-		GenesisJsonPath:               pulumi.String(e.GenesisJsonPath),
-		HostZenithDeployHeight:        pulumi.String(e.HostZenithDeployHeight),
-		BaseFeeRecipient:              pulumi.String(e.BaseFeeRecipient),
-		HostPassageContractAddress:    pulumi.String(e.HostPassageContractAddress),
-		HostTransactorContractAddress: pulumi.String(e.HostTransactorContractAddress),
-		RuPassageContractAddress:      pulumi.String(e.RuPassageContractAddress),
-		SignetClUrl:                   pulumi.String(e.SignetClUrl),
-		SignetPylonUrl:                pulumi.String(e.SignetPylonUrl),
-		HostStartTimestamp:            pulumi.String(strconv.Itoa(e.HostStartTimestamp)),
-		HostSlotOffset:                pulumi.String(strconv.Itoa(e.HostSlotOffset)),
-		HostSlotDuration:              pulumi.String(strconv.Itoa(e.HostSlotDuration)),
+		// Always required
+		BlobExplorerUrl:    pulumi.String(e.BlobExplorerUrl),
+		SignetStaticPath:   pulumi.String(e.SignetStaticPath),
+		SignetDatabasePath: pulumi.String(e.SignetDatabasePath),
+
+		// Optional with defaults
+		RpcPort:   pulumi.String(strconv.Itoa(e.RpcPort)),
+		WsRpcPort: pulumi.String(strconv.Itoa(e.WsRpcPort)),
+
+		// Optional (no defaults)
+		ChainName:      pulumi.String(e.ChainName),
+		SignetClUrl:    pulumi.String(e.SignetClUrl),
+		SignetPylonUrl: pulumi.String(e.SignetPylonUrl),
+		TxForwardUrl:   pulumi.String(e.TxForwardUrl),
+		IpcEndpoint:    pulumi.String(e.IpcEndpoint),
+		RustLog:        pulumi.String(e.RustLog),
+
+		// Conditional fields
+		RollupGenesisJsonPath: pulumi.String(e.RollupGenesisJsonPath),
+		HostGenesisJsonPath:   pulumi.String(e.HostGenesisJsonPath),
+		StartTimestamp:        pulumi.String(strconv.Itoa(e.StartTimestamp)),
+		SlotOffset:            pulumi.String(strconv.Itoa(e.SlotOffset)),
+		SlotDuration:          pulumi.String(strconv.Itoa(e.SlotDuration)),
 	}
 }
 

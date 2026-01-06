@@ -27,9 +27,13 @@ const (
 	RollupHttpPort       = 8645
 	RollupWsPort         = 8646
 
+	// SignetNode environment defaults
+	DefaultSignetRpcPort   = 8645
+	DefaultSignetWsRpcPort = 8646
+
 	// Component name
 	ComponentKind = "the-builder:index:SignetNode"
-	
+
 	// Default mount paths for volumes
 	DefaultSignetNodeDataMountPath = "/root/.local/share/reth"
 	DefaultRollupDataMountPath     = "/root/.local/share/exex"
