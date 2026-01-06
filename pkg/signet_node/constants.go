@@ -33,7 +33,7 @@ const (
 
 	// Component name
 	ComponentKind = "the-builder:index:SignetNode"
-	
+
 	// Default mount paths for volumes
 	DefaultSignetNodeDataMountPath = "/root/.local/share/reth"
 	DefaultRollupDataMountPath     = "/root/.local/share/exex"
