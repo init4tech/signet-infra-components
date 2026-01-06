@@ -28,8 +28,8 @@ const (
 	RollupWsPort         = 8646
 
 	// SignetNode environment defaults
-	DefaultSignetRpcPort   = 5959
-	DefaultSignetWsRpcPort = 5960
+	DefaultSignetRpcPort   = 8645
+	DefaultSignetWsRpcPort = 8646
 
 	// Component name
 	ComponentKind = "the-builder:index:SignetNode"
