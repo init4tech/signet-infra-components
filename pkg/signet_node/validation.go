@@ -15,6 +15,18 @@ func (args *SignetNodeComponentArgs) ApplyDefaults() {
 	if args.ExecutionJwtMountPath == "" {
 		args.ExecutionJwtMountPath = DefaultExecutionJwtMountPath
 	}
+	// Apply defaults to env
+	args.Env.ApplyDefaults()
+}
+
+// ApplyDefaults sets default values for optional SignetNodeEnv fields
+func (env *SignetNodeEnv) ApplyDefaults() {
+	if env.RpcPort == 0 {
+		env.RpcPort = DefaultSignetRpcPort
+	}
+	if env.WsRpcPort == 0 {
+		env.WsRpcPort = DefaultSignetWsRpcPort
+	}
 }
 
 func (args *SignetNodeComponentArgs) Validate() error {
@@ -56,71 +68,38 @@ func (args *SignetNodeComponentArgs) Validate() error {
 }
 
 func (env *SignetNodeEnv) Validate() error {
-	if env.BaseFeeRecipient == "" {
-		return fmt.Errorf("base fee recipient is required")
-	}
+	// Always required fields
 	if env.BlobExplorerUrl == "" {
 		return fmt.Errorf("blob explorer url is required")
-	}
-	if env.GenesisJsonPath == "" {
-		return fmt.Errorf("genesis json path is required")
-	}
-	if env.HostOrdersContractAddress == "" {
-		return fmt.Errorf("host orders contract address is required")
-	}
-	if env.HostPassageContractAddress == "" {
-		return fmt.Errorf("host passage contract address is required")
-	}
-	if env.HostSlotDuration <= 0 {
-		return fmt.Errorf("host slot duration must be a positive integer")
-	}
-	if env.HostSlotOffset < 0 {
-		return fmt.Errorf("host slot offset must be a positive integer")
-	}
-	if env.HostStartTimestamp <= 0 {
-		return fmt.Errorf("host start timestamp must be a positive integer")
-	}
-	if env.HostTransactorContractAddress == "" {
-		return fmt.Errorf("host transactor contract address is required")
-	}
-	if env.HostZenithAddress == "" {
-		return fmt.Errorf("host zenith address is required")
-	}
-	if env.HostZenithDeployHeight == "" {
-		return fmt.Errorf("host zenith deploy height is required")
-	}
-	if env.IpcEndpoint == "" {
-		return fmt.Errorf("ipc endpoint is required")
-	}
-	if env.RpcPort <= 0 {
-		return fmt.Errorf("rpc port must be a positive integer")
-	}
-	if env.RuOrdersContractAddress == "" {
-		return fmt.Errorf("ru orders contract address is required")
-	}
-	if env.RuPassageContractAddress == "" {
-		return fmt.Errorf("ru passage contract address is required")
-	}
-	if env.SignetChainId <= 0 {
-		return fmt.Errorf("signet chain id must be a positive integer")
-	}
-	if env.SignetClUrl == "" {
-		return fmt.Errorf("signet cl url is required")
-	}
-	if env.SignetDatabasePath == "" {
-		return fmt.Errorf("signet database path is required")
-	}
-	if env.SignetPylonUrl == "" {
-		return fmt.Errorf("signet pylon url is required")
 	}
 	if env.SignetStaticPath == "" {
 		return fmt.Errorf("signet static path is required")
 	}
-	if env.TxForwardUrl == "" {
-		return fmt.Errorf("tx forward url is required")
+	if env.SignetDatabasePath == "" {
+		return fmt.Errorf("signet database path is required")
 	}
-	if env.WsRpcPort <= 0 {
-		return fmt.Errorf("ws rpc port must be a positive integer")
+
+	// Conditional validation: if ChainName is not set, require genesis and slot calculator vars
+	if env.ChainName == "" {
+		// Genesis configuration required
+		if env.RollupGenesisJsonPath == "" {
+			return fmt.Errorf("rollup genesis json path is required when chain name is not set")
+		}
+		if env.HostGenesisJsonPath == "" {
+			return fmt.Errorf("host genesis json path is required when chain name is not set")
+		}
+
+		// Slot calculator configuration required
+		if env.StartTimestamp <= 0 {
+			return fmt.Errorf("start timestamp must be a positive integer when chain name is not set")
+		}
+		if env.SlotOffset < 0 {
+			return fmt.Errorf("slot offset must be a non-negative integer when chain name is not set")
+		}
+		if env.SlotDuration <= 0 {
+			return fmt.Errorf("slot duration must be a positive integer when chain name is not set")
+		}
 	}
+
 	return nil
 }
