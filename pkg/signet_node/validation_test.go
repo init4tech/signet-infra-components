@@ -21,8 +21,7 @@ func TestSignetNodeComponentArgsValidate(t *testing.T) {
 			SignetStaticPath:   "/static",
 			TxForwardUrl:       "https://tx-forward.example.com",
 			WsRpcPort:          8546,
-			// RustLog is optional - can be nil or set
-			RustLog: stringPtr("info"),
+			RustLog:            "info",
 		},
 		ExecutionJwt:                "jwt-secret-token",
 		ExecutionPvcSize:            "150Gi",
@@ -88,7 +87,7 @@ func TestSignetNodeEnvValidate(t *testing.T) {
 			SignetStaticPath:   "/static/files",
 			TxForwardUrl:       "https://tx.example.com",
 			WsRpcPort:          8546,
-			RustLog:            stringPtr("debug"), // optional
+			RustLog:            "debug",
 		}
 		err := env.Validate()
 		assert.NoError(t, err)
@@ -106,7 +105,7 @@ func TestSignetNodeEnvValidate(t *testing.T) {
 			SignetStaticPath:   "/static/files",
 			TxForwardUrl:       "https://tx.example.com",
 			WsRpcPort:          8546,
-			RustLog:            nil,
+			RustLog:            "info",
 		}
 		err := env.Validate()
 		assert.NoError(t, err)

@@ -70,32 +70,32 @@ type SignetNodeComponent struct {
 
 // Public-facing environment struct with base Go types
 type SignetNodeEnv struct {
-	ChainName          string  `pulumi:"chainName" validate:"required"`
-	IpcEndpoint        string  `pulumi:"ipcEndpoint" validate:"required"`
-	RpcPort            int     `pulumi:"rpcPort" validate:"required"`
-	RustLog            *string `pulumi:"rustLog"` // optional
-	SignetChainId      int     `pulumi:"signetChainId" validate:"required"`
-	SignetClUrl        string  `pulumi:"signetClUrl" validate:"required"`
-	SignetDatabasePath string  `pulumi:"signetDatabasePath" validate:"required"`
-	SignetPylonUrl     string  `pulumi:"signetPylonUrl" validate:"required"`
-	SignetStaticPath   string  `pulumi:"signetStaticPath" validate:"required"`
-	TxForwardUrl       string  `pulumi:"txForwardUrl" validate:"required"`
-	WsRpcPort          int     `pulumi:"wsRpcPort" validate:"required"`
+	ChainName          string `pulumi:"chainName" validate:"required"`
+	IpcEndpoint        string `pulumi:"ipcEndpoint" validate:"required"`
+	RpcPort            int    `pulumi:"rpcPort" validate:"required"`
+	RustLog            string `pulumi:"rustLog"` // optional, defaults to "info"
+	SignetChainId      int    `pulumi:"signetChainId" validate:"required"`
+	SignetClUrl        string `pulumi:"signetClUrl" validate:"required"`
+	SignetDatabasePath string `pulumi:"signetDatabasePath" validate:"required"`
+	SignetPylonUrl     string `pulumi:"signetPylonUrl" validate:"required"`
+	SignetStaticPath   string `pulumi:"signetStaticPath" validate:"required"`
+	TxForwardUrl       string `pulumi:"txForwardUrl" validate:"required"`
+	WsRpcPort          int    `pulumi:"wsRpcPort" validate:"required"`
 }
 
 // Internal environment struct with Pulumi types
 type signetNodeEnvInternal struct {
-	ChainName          pulumi.StringInput    `pulumi:"chainName" validate:"required"`
-	IpcEndpoint        pulumi.StringInput    `pulumi:"ipcEndpoint" validate:"required"`
-	RpcPort            pulumi.IntInput       `pulumi:"rpcPort" validate:"required"`
-	RustLog            pulumi.StringPtrInput `pulumi:"rustLog"`
-	SignetChainId      pulumi.IntInput       `pulumi:"signetChainId" validate:"required"`
-	SignetClUrl        pulumi.StringInput    `pulumi:"signetClUrl" validate:"required"`
-	SignetDatabasePath pulumi.StringInput    `pulumi:"signetDatabasePath" validate:"required"`
-	SignetPylonUrl     pulumi.StringInput    `pulumi:"signetPylonUrl" validate:"required"`
-	SignetStaticPath   pulumi.StringInput    `pulumi:"signetStaticPath" validate:"required"`
-	TxForwardUrl       pulumi.StringInput    `pulumi:"txForwardUrl" validate:"required"`
-	WsRpcPort          pulumi.IntInput       `pulumi:"wsRpcPort" validate:"required"`
+	ChainName          pulumi.StringInput `pulumi:"chainName" validate:"required"`
+	IpcEndpoint        pulumi.StringInput `pulumi:"ipcEndpoint" validate:"required"`
+	RpcPort            pulumi.IntInput    `pulumi:"rpcPort" validate:"required"`
+	RustLog            pulumi.StringInput `pulumi:"rustLog"` // now StringInput, not StringPtrInput
+	SignetChainId      pulumi.IntInput    `pulumi:"signetChainId" validate:"required"`
+	SignetClUrl        pulumi.StringInput `pulumi:"signetClUrl" validate:"required"`
+	SignetDatabasePath pulumi.StringInput `pulumi:"signetDatabasePath" validate:"required"`
+	SignetPylonUrl     pulumi.StringInput `pulumi:"signetPylonUrl" validate:"required"`
+	SignetStaticPath   pulumi.StringInput `pulumi:"signetStaticPath" validate:"required"`
+	TxForwardUrl       pulumi.StringInput `pulumi:"txForwardUrl" validate:"required"`
+	WsRpcPort          pulumi.IntInput    `pulumi:"wsRpcPort" validate:"required"`
 }
 
 // Conversion function to convert public args to internal args
@@ -125,7 +125,7 @@ func (e SignetNodeEnv) toInternal() signetNodeEnvInternal {
 		ChainName:          pulumi.String(e.ChainName),
 		IpcEndpoint:        pulumi.String(e.IpcEndpoint),
 		RpcPort:            pulumi.Int(e.RpcPort),
-		RustLog:            pulumi.StringPtr(e.RustLog), // correctly handles nil → absent in config
+		RustLog:            pulumi.String(e.RustLog),
 		SignetChainId:      pulumi.Int(e.SignetChainId),
 		SignetClUrl:        pulumi.String(e.SignetClUrl),
 		SignetDatabasePath: pulumi.String(e.SignetDatabasePath),
