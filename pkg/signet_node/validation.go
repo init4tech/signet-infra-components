@@ -48,7 +48,8 @@ func (args *SignetNodeComponentArgs) Validate() error {
 	if args.ConsensusClientStartCommand == nil {
 		return fmt.Errorf("consensus client start command is required")
 	}
-	// Note: AppLabels is not validated as it's optional and has a default struct value
+	// Note: AppLabels is optional and has a default zero value (empty map is fine)
+
 	if err := args.Env.Validate(); err != nil {
 		return fmt.Errorf("invalid signet node env: %w", err)
 	}
@@ -56,71 +57,36 @@ func (args *SignetNodeComponentArgs) Validate() error {
 }
 
 func (env *SignetNodeEnv) Validate() error {
-	if env.BaseFeeRecipient == "" {
-		return fmt.Errorf("base fee recipient is required")
-	}
-	if env.BlobExplorerUrl == "" {
-		return fmt.Errorf("blob explorer url is required")
-	}
-	if env.GenesisJsonPath == "" {
-		return fmt.Errorf("genesis json path is required")
-	}
-	if env.HostOrdersContractAddress == "" {
-		return fmt.Errorf("host orders contract address is required")
-	}
-	if env.HostPassageContractAddress == "" {
-		return fmt.Errorf("host passage contract address is required")
-	}
-	if env.HostSlotDuration <= 0 {
-		return fmt.Errorf("host slot duration must be a positive integer")
-	}
-	if env.HostSlotOffset < 0 {
-		return fmt.Errorf("host slot offset must be a positive integer")
-	}
-	if env.HostStartTimestamp <= 0 {
-		return fmt.Errorf("host start timestamp must be a positive integer")
-	}
-	if env.HostTransactorContractAddress == "" {
-		return fmt.Errorf("host transactor contract address is required")
-	}
-	if env.HostZenithAddress == "" {
-		return fmt.Errorf("host zenith address is required")
-	}
-	if env.HostZenithDeployHeight == "" {
-		return fmt.Errorf("host zenith deploy height is required")
+	if env.ChainName == "" {
+		return fmt.Errorf("chainName is required")
 	}
 	if env.IpcEndpoint == "" {
-		return fmt.Errorf("ipc endpoint is required")
+		return fmt.Errorf("ipcEndpoint is required")
 	}
 	if env.RpcPort <= 0 {
-		return fmt.Errorf("rpc port must be a positive integer")
+		return fmt.Errorf("rpcPort must be a positive integer")
 	}
-	if env.RuOrdersContractAddress == "" {
-		return fmt.Errorf("ru orders contract address is required")
-	}
-	if env.RuPassageContractAddress == "" {
-		return fmt.Errorf("ru passage contract address is required")
-	}
+	// RustLog is optional (*string), so we don't validate emptiness
 	if env.SignetChainId <= 0 {
-		return fmt.Errorf("signet chain id must be a positive integer")
+		return fmt.Errorf("signetChainId must be a positive integer")
 	}
 	if env.SignetClUrl == "" {
-		return fmt.Errorf("signet cl url is required")
+		return fmt.Errorf("signetClUrl is required")
 	}
 	if env.SignetDatabasePath == "" {
-		return fmt.Errorf("signet database path is required")
+		return fmt.Errorf("signetDatabasePath is required")
 	}
 	if env.SignetPylonUrl == "" {
-		return fmt.Errorf("signet pylon url is required")
+		return fmt.Errorf("signetPylonUrl is required")
 	}
 	if env.SignetStaticPath == "" {
-		return fmt.Errorf("signet static path is required")
+		return fmt.Errorf("signetStaticPath is required")
 	}
 	if env.TxForwardUrl == "" {
-		return fmt.Errorf("tx forward url is required")
+		return fmt.Errorf("txForwardUrl is required")
 	}
 	if env.WsRpcPort <= 0 {
-		return fmt.Errorf("ws rpc port must be a positive integer")
+		return fmt.Errorf("wsRpcPort must be a positive integer")
 	}
 	return nil
 }
