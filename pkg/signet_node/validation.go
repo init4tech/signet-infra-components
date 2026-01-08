@@ -60,7 +60,8 @@ func (args *SignetNodeComponentArgs) Validate() error {
 	if args.ConsensusClientStartCommand == nil {
 		return fmt.Errorf("consensus client start command is required")
 	}
-	// Note: AppLabels is not validated as it's optional and has a default struct value
+	// Note: AppLabels is optional and has a default zero value (empty map is fine)
+
 	if err := args.Env.Validate(); err != nil {
 		return fmt.Errorf("invalid signet node env: %w", err)
 	}
@@ -68,37 +69,36 @@ func (args *SignetNodeComponentArgs) Validate() error {
 }
 
 func (env *SignetNodeEnv) Validate() error {
-	// Always required fields
-	if env.BlobExplorerUrl == "" {
-		return fmt.Errorf("blob explorer url is required")
+	if env.ChainName == "" {
+		return fmt.Errorf("chainName is required")
 	}
-	if env.SignetStaticPath == "" {
-		return fmt.Errorf("signet static path is required")
+	if env.IpcEndpoint == "" {
+		return fmt.Errorf("ipcEndpoint is required")
+	}
+	if env.RpcPort <= 0 {
+		return fmt.Errorf("rpcPort must be a positive integer")
+	}
+	// RustLog is optional (*string), so we don't validate emptiness
+	if env.SignetChainId <= 0 {
+		return fmt.Errorf("signetChainId must be a positive integer")
+	}
+	if env.SignetClUrl == "" {
+		return fmt.Errorf("signetClUrl is required")
 	}
 	if env.SignetDatabasePath == "" {
-		return fmt.Errorf("signet database path is required")
+		return fmt.Errorf("signetDatabasePath is required")
 	}
-
-	// Conditional validation: if ChainName is not set, require genesis and slot calculator vars
-	if env.ChainName == "" {
-		// Genesis configuration required
-		if env.RollupGenesisJsonPath == "" {
-			return fmt.Errorf("rollup genesis json path is required when chain name is not set")
-		}
-		if env.HostGenesisJsonPath == "" {
-			return fmt.Errorf("host genesis json path is required when chain name is not set")
-		}
-
-		// Slot calculator configuration required
-		if env.StartTimestamp <= 0 {
-			return fmt.Errorf("start timestamp must be a positive integer when chain name is not set")
-		}
-		if env.SlotOffset < 0 {
-			return fmt.Errorf("slot offset must be a non-negative integer when chain name is not set")
-		}
-		if env.SlotDuration <= 0 {
-			return fmt.Errorf("slot duration must be a positive integer when chain name is not set")
-		}
+	if env.SignetPylonUrl == "" {
+		return fmt.Errorf("signetPylonUrl is required")
+	}
+	if env.SignetStaticPath == "" {
+		return fmt.Errorf("signetStaticPath is required")
+	}
+	if env.TxForwardUrl == "" {
+		return fmt.Errorf("txForwardUrl is required")
+	}
+	if env.WsRpcPort <= 0 {
+		return fmt.Errorf("wsRpcPort must be a positive integer")
 	}
 
 	return nil

@@ -1,8 +1,6 @@
 package signet_node
 
 import (
-	"strconv"
-
 	"github.com/init4tech/signet-infra-components/pkg/utils"
 	crd "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apiextensions"
 	appsv1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/apps/v1"
@@ -55,6 +53,7 @@ type signetNodeComponentArgsInternal struct {
 
 type SignetNodeComponent struct {
 	pulumi.ResourceState
+
 	SignetNodeComponentArgs  SignetNodeComponentArgs
 	SignetNodeStatefulSet    *appsv1.StatefulSet
 	LighthouseStatefulSet    *appsv1.StatefulSet
@@ -71,56 +70,32 @@ type SignetNodeComponent struct {
 
 // Public-facing environment struct with base Go types
 type SignetNodeEnv struct {
-	// Always required
-	BlobExplorerUrl    string `pulumi:"blobExplorerUrl" validate:"required"`
-	SignetStaticPath   string `pulumi:"signetStaticPath" validate:"required"`
+	ChainName          string `pulumi:"chainName" validate:"required"`
+	IpcEndpoint        string `pulumi:"ipcEndpoint" validate:"required"`
+	RpcPort            int    `pulumi:"rpcPort" validate:"required"`
+	RustLog            string `pulumi:"rustLog"` // optional, defaults to "info"
+	SignetChainId      int    `pulumi:"signetChainId" validate:"required"`
+	SignetClUrl        string `pulumi:"signetClUrl" validate:"required"`
 	SignetDatabasePath string `pulumi:"signetDatabasePath" validate:"required"`
-
-	// Optional with defaults (RpcPort: 5959, WsRpcPort: 5960)
-	RpcPort   int `pulumi:"rpcPort"`
-	WsRpcPort int `pulumi:"wsRpcPort"`
-
-	// Optional (no defaults)
-	ChainName      string `pulumi:"chainName"`
-	SignetClUrl    string `pulumi:"signetClUrl"`
-	SignetPylonUrl string `pulumi:"signetPylonUrl"`
-	TxForwardUrl   string `pulumi:"txForwardUrl"`
-	IpcEndpoint    string `pulumi:"ipcEndpoint"`
-	RustLog        string `pulumi:"rustLog"`
-
-	// Conditional: required if ChainName is not set
-	RollupGenesisJsonPath string `pulumi:"rollupGenesisJsonPath"`
-	HostGenesisJsonPath   string `pulumi:"hostGenesisJsonPath"`
-	StartTimestamp        int    `pulumi:"startTimestamp"`
-	SlotOffset            int    `pulumi:"slotOffset"`
-	SlotDuration          int    `pulumi:"slotDuration"`
+	SignetPylonUrl     string `pulumi:"signetPylonUrl" validate:"required"`
+	SignetStaticPath   string `pulumi:"signetStaticPath" validate:"required"`
+	TxForwardUrl       string `pulumi:"txForwardUrl" validate:"required"`
+	WsRpcPort          int    `pulumi:"wsRpcPort" validate:"required"`
 }
 
 // Internal environment struct with Pulumi types
 type signetNodeEnvInternal struct {
-	// Always required
-	BlobExplorerUrl    pulumi.StringInput `pulumi:"blobExplorerUrl" validate:"required"`
-	SignetStaticPath   pulumi.StringInput `pulumi:"signetStaticPath" validate:"required"`
+	ChainName          pulumi.StringInput `pulumi:"chainName" validate:"required"`
+	IpcEndpoint        pulumi.StringInput `pulumi:"ipcEndpoint" validate:"required"`
+	RpcPort            pulumi.IntInput    `pulumi:"rpcPort" validate:"required"`
+	RustLog            pulumi.StringInput `pulumi:"rustLog"` // now StringInput, not StringPtrInput
+	SignetChainId      pulumi.IntInput    `pulumi:"signetChainId" validate:"required"`
+	SignetClUrl        pulumi.StringInput `pulumi:"signetClUrl" validate:"required"`
 	SignetDatabasePath pulumi.StringInput `pulumi:"signetDatabasePath" validate:"required"`
-
-	// Optional with defaults
-	RpcPort   pulumi.StringInput `pulumi:"rpcPort"`
-	WsRpcPort pulumi.StringInput `pulumi:"wsRpcPort"`
-
-	// Optional (no defaults)
-	ChainName      pulumi.StringInput `pulumi:"chainName"`
-	SignetClUrl    pulumi.StringInput `pulumi:"signetClUrl"`
-	SignetPylonUrl pulumi.StringInput `pulumi:"signetPylonUrl"`
-	TxForwardUrl   pulumi.StringInput `pulumi:"txForwardUrl"`
-	IpcEndpoint    pulumi.StringInput `pulumi:"ipcEndpoint"`
-	RustLog        pulumi.StringInput `pulumi:"rustLog"`
-
-	// Conditional: required if ChainName is not set
-	RollupGenesisJsonPath pulumi.StringInput `pulumi:"rollupGenesisJsonPath"`
-	HostGenesisJsonPath   pulumi.StringInput `pulumi:"hostGenesisJsonPath"`
-	StartTimestamp        pulumi.StringInput `pulumi:"startTimestamp"`
-	SlotOffset            pulumi.StringInput `pulumi:"slotOffset"`
-	SlotDuration          pulumi.StringInput `pulumi:"slotDuration"`
+	SignetPylonUrl     pulumi.StringInput `pulumi:"signetPylonUrl" validate:"required"`
+	SignetStaticPath   pulumi.StringInput `pulumi:"signetStaticPath" validate:"required"`
+	TxForwardUrl       pulumi.StringInput `pulumi:"txForwardUrl" validate:"required"`
+	WsRpcPort          pulumi.IntInput    `pulumi:"wsRpcPort" validate:"required"`
 }
 
 // Conversion function to convert public args to internal args
@@ -147,29 +122,17 @@ func (args SignetNodeComponentArgs) toInternal() signetNodeComponentArgsInternal
 // Conversion function to convert public env to internal env
 func (e SignetNodeEnv) toInternal() signetNodeEnvInternal {
 	return signetNodeEnvInternal{
-		// Always required
-		BlobExplorerUrl:    pulumi.String(e.BlobExplorerUrl),
-		SignetStaticPath:   pulumi.String(e.SignetStaticPath),
+		ChainName:          pulumi.String(e.ChainName),
+		IpcEndpoint:        pulumi.String(e.IpcEndpoint),
+		RpcPort:            pulumi.Int(e.RpcPort),
+		RustLog:            pulumi.String(e.RustLog),
+		SignetChainId:      pulumi.Int(e.SignetChainId),
+		SignetClUrl:        pulumi.String(e.SignetClUrl),
 		SignetDatabasePath: pulumi.String(e.SignetDatabasePath),
-
-		// Optional with defaults
-		RpcPort:   pulumi.String(strconv.Itoa(e.RpcPort)),
-		WsRpcPort: pulumi.String(strconv.Itoa(e.WsRpcPort)),
-
-		// Optional (no defaults)
-		ChainName:      pulumi.String(e.ChainName),
-		SignetClUrl:    pulumi.String(e.SignetClUrl),
-		SignetPylonUrl: pulumi.String(e.SignetPylonUrl),
-		TxForwardUrl:   pulumi.String(e.TxForwardUrl),
-		IpcEndpoint:    pulumi.String(e.IpcEndpoint),
-		RustLog:        pulumi.String(e.RustLog),
-
-		// Conditional fields
-		RollupGenesisJsonPath: pulumi.String(e.RollupGenesisJsonPath),
-		HostGenesisJsonPath:   pulumi.String(e.HostGenesisJsonPath),
-		StartTimestamp:        pulumi.String(strconv.Itoa(e.StartTimestamp)),
-		SlotOffset:            pulumi.String(strconv.Itoa(e.SlotOffset)),
-		SlotDuration:          pulumi.String(strconv.Itoa(e.SlotDuration)),
+		SignetPylonUrl:     pulumi.String(e.SignetPylonUrl),
+		SignetStaticPath:   pulumi.String(e.SignetStaticPath),
+		TxForwardUrl:       pulumi.String(e.TxForwardUrl),
+		WsRpcPort:          pulumi.Int(e.WsRpcPort),
 	}
 }
 
