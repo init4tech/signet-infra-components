@@ -15,6 +15,18 @@ func (args *SignetNodeComponentArgs) ApplyDefaults() {
 	if args.ExecutionJwtMountPath == "" {
 		args.ExecutionJwtMountPath = DefaultExecutionJwtMountPath
 	}
+	// Apply defaults to env
+	args.Env.ApplyDefaults()
+}
+
+// ApplyDefaults sets default values for optional SignetNodeEnv fields
+func (env *SignetNodeEnv) ApplyDefaults() {
+	if env.RpcPort == 0 {
+		env.RpcPort = DefaultSignetRpcPort
+	}
+	if env.WsRpcPort == 0 {
+		env.WsRpcPort = DefaultSignetWsRpcPort
+	}
 }
 
 func (args *SignetNodeComponentArgs) Validate() error {
@@ -88,5 +100,6 @@ func (env *SignetNodeEnv) Validate() error {
 	if env.WsRpcPort <= 0 {
 		return fmt.Errorf("wsRpcPort must be a positive integer")
 	}
+
 	return nil
 }
