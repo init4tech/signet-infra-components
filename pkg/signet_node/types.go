@@ -70,6 +70,7 @@ type SignetNodeComponent struct {
 
 // Public-facing environment struct with base Go types
 type SignetNodeEnv struct {
+	BlobExplorerUrl    string `pulumi:"blobExplorerUrl" validate:"required"`
 	ChainName          string `pulumi:"chainName" validate:"required"`
 	IpcEndpoint        string `pulumi:"ipcEndpoint" validate:"required"`
 	RpcPort            int    `pulumi:"rpcPort" validate:"required"`
@@ -85,6 +86,7 @@ type SignetNodeEnv struct {
 
 // Internal environment struct with Pulumi types
 type signetNodeEnvInternal struct {
+	BlobExplorerUrl    pulumi.StringInput `pulumi:"blobExplorerUrl" validate:"required"`
 	ChainName          pulumi.StringInput `pulumi:"chainName" validate:"required"`
 	IpcEndpoint        pulumi.StringInput `pulumi:"ipcEndpoint" validate:"required"`
 	RpcPort            pulumi.IntInput    `pulumi:"rpcPort" validate:"required"`
@@ -122,6 +124,7 @@ func (args SignetNodeComponentArgs) toInternal() signetNodeComponentArgsInternal
 // Conversion function to convert public env to internal env
 func (e SignetNodeEnv) toInternal() signetNodeEnvInternal {
 	return signetNodeEnvInternal{
+		BlobExplorerUrl:    pulumi.String(e.BlobExplorerUrl),
 		ChainName:          pulumi.String(e.ChainName),
 		IpcEndpoint:        pulumi.String(e.IpcEndpoint),
 		RpcPort:            pulumi.Int(e.RpcPort),
