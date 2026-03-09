@@ -1,11 +1,11 @@
 module github.com/init4tech/signet-infra-components
 
-go 1.25.0
+go 1.25.6
 
 require (
 	github.com/pulumi/pulumi-aws/sdk/v6 v6.83.2
 	github.com/pulumi/pulumi-kubernetes/sdk/v4 v4.27.0
-	github.com/pulumi/pulumi/sdk/v3 v3.224.0
+	github.com/pulumi/pulumi/sdk/v3 v3.225.1
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -106,7 +106,7 @@ require (
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/mod v0.32.0 // indirect
-	golang.org/x/net v0.50.0 // indirect
+	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/term v0.40.0 // indirect
