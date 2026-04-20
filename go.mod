@@ -3,7 +3,7 @@ module github.com/init4tech/signet-infra-components
 go 1.25.8
 
 require (
-	github.com/pulumi/pulumi-aws/sdk/v6 v6.83.2
+	github.com/pulumi/pulumi-aws/sdk/v6 v6.83.3
 	github.com/pulumi/pulumi-kubernetes/sdk/v4 v4.28.0
 	github.com/pulumi/pulumi/sdk/v3 v3.229.0
 	github.com/stretchr/testify v1.11.1
